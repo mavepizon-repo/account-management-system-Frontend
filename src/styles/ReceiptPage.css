@@ -1,0 +1,361 @@
+/* ===== RECEIPT PAGE CSS ===== */
+
+/* ── Action Buttons ─────────────────────────────────────── */
+.action-btn.rcp-btn-add {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: white;
+  box-shadow: 0 6px 20px rgba(124,58,237,0.35);
+}
+.action-btn.rcp-btn-add:hover { box-shadow: 0 10px 28px rgba(124,58,237,0.45); }
+
+.action-btn.rcp-btn-update {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+}
+.action-btn.rcp-btn-update:hover { box-shadow: 0 10px 28px rgba(245,158,11,0.45); }
+
+.action-btn.rcp-btn-delete {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: white;
+  box-shadow: 0 6px 20px rgba(239,68,68,0.35);
+}
+.action-btn.rcp-btn-delete:hover { box-shadow: 0 10px 28px rgba(239,68,68,0.45); }
+
+.action-btn.rcp-btn-getall {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  color: white;
+  box-shadow: 0 6px 20px rgba(8,145,178,0.35);
+}
+.action-btn.rcp-btn-getall:hover { box-shadow: 0 10px 28px rgba(8,145,178,0.45); }
+
+/* ── Submit Buttons ─────────────────────────────────────── */
+.rcp-submit {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
+  box-shadow: 0 6px 20px rgba(124,58,237,0.35) !important;
+  color: white !important;
+}
+.rcp-submit:hover { box-shadow: 0 10px 28px rgba(124,58,237,0.45) !important; }
+
+.rcp-pdf-btn {
+  background: linear-gradient(135deg, #0891b2, #0e7490) !important;
+  box-shadow: 0 6px 20px rgba(8,145,178,0.30) !important;
+  color: white !important;
+}
+
+.rcp-share-btn {
+  background: linear-gradient(135deg, #06d6a0, #04a87f) !important;
+  box-shadow: 0 6px 20px rgba(6,214,160,0.30) !important;
+  color: white !important;
+}
+
+/* ── Summary Chips ──────────────────────────────────────── */
+.rcp-summary-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 768px) { .rcp-summary-chips { grid-template-columns: 1fr 1fr; } }
+
+.rcp-chip {
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1.5px solid transparent;
+  animation: fadeInUp 0.3s ease;
+}
+.rcp-chip span   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.75; }
+.rcp-chip strong { font-size: 20px; font-weight: 800; font-family: var(--font-display); }
+
+.chip-total    { background: #eef1ff; color: var(--primary); border-color: #c8d4ff; }
+.chip-billed   { background: #fffbe8; color: #7a5000;        border-color: #ffe08a; }
+.chip-received { background: #e6fdf6; color: #036b4e;        border-color: #a0f0d8; }
+.chip-due      { background: #fff4f7; color: #c93360;        border-color: #ffc8d4; }
+
+/* ── Status Filter Tabs ─────────────────────────────────── */
+.rcp-filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.rcp-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1.5px solid transparent;
+  background: white;
+}
+
+.rcp-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rcp-tab-all { color: var(--text-secondary); border-color: #dde5f8; }
+.rcp-tab-all .rcp-tab-count { background: #eef1ff; color: var(--primary); }
+.rcp-tab-all:hover, .rcp-tab-all.active { background: #eef1ff; border-color: #c8d4ff; color: var(--primary); }
+
+.rcp-tab-paid { color: #036b4e; border-color: #a0f0d8; }
+.rcp-tab-paid .rcp-tab-count { background: #e6fdf6; color: #036b4e; }
+.rcp-tab-paid:hover, .rcp-tab-paid.active { background: #e6fdf6; border-color: #5de8c8; color: #024d3a; box-shadow: 0 3px 12px rgba(34,211,165,0.18); }
+
+.rcp-tab-partial { color: #7a5000; border-color: #ffe08a; }
+.rcp-tab-partial .rcp-tab-count { background: #fffbe8; color: #7a5000; }
+.rcp-tab-partial:hover, .rcp-tab-partial.active { background: #fffbe8; border-color: #ffb84a; color: #6b4200; box-shadow: 0 3px 12px rgba(255,184,74,0.20); }
+
+.rcp-tab-unpaid { color: #c93360; border-color: #ffc8d4; }
+.rcp-tab-unpaid .rcp-tab-count { background: #fff4f7; color: #c93360; }
+.rcp-tab-unpaid:hover, .rcp-tab-unpaid.active { background: #fff4f7; border-color: #ff8fab; color: #a0193f; box-shadow: 0 3px 12px rgba(255,107,138,0.18); }
+
+.rcp-filter-tab.active { border-width: 2px; font-weight: 700; }
+
+/* ── Balance Info Row ───────────────────────────────────── */
+.rcp-balance-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 768px) { .rcp-balance-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .rcp-balance-row { grid-template-columns: 1fr; } }
+
+.rcp-balance-card {
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1.5px solid transparent;
+  animation: fadeInUp 0.3s ease;
+}
+.rcp-balance-card span   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.75; }
+.rcp-balance-card strong { font-size: 18px; font-weight: 800; font-family: var(--font-display); }
+
+.rcp-bc-total  { background: #fffbe8; color: #7a5000; border-color: #ffe08a; }
+.rcp-bc-paid   { background: #e6fdf6; color: #036b4e; border-color: #a0f0d8; }
+.rcp-bc-due    { background: #fff4f7; color: #c93360; border-color: #ffc8d4; }
+.rcp-bc-status { background: #f3e8ff; color: #7c3aed; border-color: #ddd6fe; }
+
+/* ── Client Info Card ───────────────────────────────────── */
+.rcp-client-info-card {
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+  border: 1.5px solid #ddd6fe;
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.rcp-client-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.rcp-client-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+}
+
+.rcp-client-name    { font-size: 17px; font-weight: 800; color: #3b0764; margin-bottom: 3px; }
+.rcp-client-meta    { font-size: 13px; font-weight: 600; color: #7c3aed; margin-bottom: 3px; }
+.rcp-client-address { font-size: 12px; color: #6b21a8; }
+
+.rcp-inv-tag {
+  display: inline-block;
+  background: #7c3aed;
+  color: white;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.rcp-inv-project { font-size: 13px; color: #5b21b6; font-weight: 600; }
+
+/* ── Table ──────────────────────────────────────────────── */
+.rcp-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1.5px solid #dde5f8;
+}
+
+.rcp-table { min-width: 900px; }
+.rcp-table th { white-space: nowrap; font-size: 11px; }
+.rcp-table td { white-space: nowrap; font-size: 13px; padding: 12px 14px; }
+
+/* ── Number Tags ────────────────────────────────────────── */
+.rcp-number-tag {
+  display: inline-block;
+  background: #f3e8ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.inv-number-tag {
+  display: inline-block;
+  background: #fffbe8;
+  color: #7a5000;
+  border: 1px solid #ffe08a;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* ── Table Action Buttons ───────────────────────────────── */
+.rcp-action-btns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.rcp-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  cursor: pointer;
+  border: 1.5px solid transparent;
+}
+
+.rcp-print  { background: #e6fdf6; border-color: #a0f0d8; color: #036b4e; }
+.rcp-print:hover  { background: #22d3a5; color: white; transform: scale(1.1); }
+
+.rcp-pdf    { background: #e0f2fe; border-color: #7dd3fc; color: #0369a1; }
+.rcp-pdf:hover    { background: #0891b2; color: white; transform: scale(1.1); }
+
+.rcp-share  { background: #f3e8ff; border-color: #ddd6fe; color: #7c3aed; }
+.rcp-share:hover  { background: #7c3aed; color: white; transform: scale(1.1); }
+
+/* ── Method Badge ───────────────────────────────────────── */
+.method-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef1ff;
+  color: var(--primary);
+  border: 1px solid #c8d4ff;
+  white-space: nowrap;
+}
+
+/* ── Status Badges ──────────────────────────────────────── */
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.status-paid    { background: #e6fdf6; color: #036b4e; border: 1px solid #a0f0d8; }
+.status-partial { background: #fffbe8; color: #7a5000; border: 1px solid #ffe08a; }
+.status-pending { background: #fff4f7; color: #c93360; border: 1px solid #ffc8d4; }
+
+/* ── Amount Cells ───────────────────────────────────────── */
+.amt-cell  { font-weight: 700; color: var(--text-primary); }
+.paid-cell { font-weight: 700; color: #036b4e; }
+.due-cell  { font-weight: 700; color: #c93360; }
+.zero-cell { font-weight: 700; color: #036b4e; }
+
+/* ── Loading Bar ────────────────────────────────────────── */
+.loading-bar { height: 3px; background: #f3e8ff; border-radius: 99px; overflow: hidden; margin-bottom: 20px; }
+.loading-inner { height: 100%; width: 38%; background: linear-gradient(90deg, #c4b5fd, #7c3aed, #c4b5fd); border-radius: 99px; animation: loadingSlide 1.2s ease-in-out infinite; }
+@keyframes loadingSlide { 0%{transform:translateX(-120%);} 100%{transform:translateX(380%);} }
+
+/* ── Empty State ────────────────────────────────────────── */
+.empty-state { text-align: center; padding: 48px; color: var(--text-muted); }
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) { .rcp-balance-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .rcp-balance-row { grid-template-columns: 1fr; } }
+
+/* Receipt card list */
+.rcp-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+ 
+.rcp-row-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: var(--transition);
+  animation: fadeInUp 0.25s ease;
+}
+.rcp-row-card:hover { border-color: #ddd6fe; background: #fdf9ff; transform: translateX(3px); }
+.rcp-row-selected  { border-color: #7c3aed !important; background: #fdf4ff !important; }
+ 
+.rcp-row-left { flex: 0 0 auto; min-width: 180px; }
+.rcp-row-project { font-weight: 700; font-size: 15px; color: var(--text-primary); margin-top: 6px; }
+.rcp-row-client  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+ 
+.rcp-row-mid { flex: 1; }
+.rcp-row-inv  { margin-bottom: 4px; }
+.rcp-row-amt  { font-size: 15px; font-weight: 800; color: #7c3aed; }
+.rcp-row-date { font-size: 12px; color: var(--text-secondary); }
+ 
+.rcp-row-right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+ 
+/* Receipt detail card */
+.rcp-detail-card {
+  background: white;
+  border: 1.5px solid #ddd6fe;
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  animation: fadeInUp 0.3s ease;
+  box-shadow: var(--shadow-sm);
+}
+ 
+.rcp-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #f3e8ff;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+ 

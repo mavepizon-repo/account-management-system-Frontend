@@ -1,0 +1,297 @@
+/* ===== CLIENT PAGE CSS — PREMIUM LIGHT ===== */
+
+/* ── Loading bar ─────────────────────────────────────────── */
+.loading-bar {
+  height: 3px;
+  background: #eef1ff;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.loading-inner {
+  height: 100%;
+  width: 38%;
+  background: linear-gradient(90deg, #a0b4ff, #5b7fff, #a0b4ff);
+  border-radius: 99px;
+  animation: loadingSlide 1.2s ease-in-out infinite;
+}
+@keyframes loadingSlide {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(380%); }
+}
+
+/* ── Client code tag in table ────────────────────────────── */
+.client-code-tag {
+  background: #eef1ff;
+  color: var(--primary);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  border: 1px solid #c8d4ff;
+}
+
+/* ── Invoices count badge in table ───────────────────────── */
+.invoices-count-badge {
+  background: #f0f4ff;
+  color: var(--primary);
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #c8d4ff;
+}
+
+/* ── Outstanding cells ───────────────────────────────────── */
+.outstanding-due  { font-weight:800 !important; color:#c93360 !important; background:#fff4f7 !important; }
+.outstanding-zero { font-weight:700 !important; color:var(--success) !important; }
+
+/* ── Status badges ───────────────────────────────────────── */
+.status-badge { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }
+.status-paid    { background:#e6fdf6; color:#036b4e; border:1px solid #a0f0d8; }
+.status-partial { background:#fffbe8; color:#7a5000; border:1px solid #ffe08a; }
+.status-pending { background:#fff4f7; color:#c93360; border:1px solid #ffc8d4; }
+
+/* ── Amount cells ────────────────────────────────────────── */
+.amt-cell  { font-weight:700; color:var(--text-primary); }
+.paid-cell { font-weight:700; color:var(--success); }
+.due-cell  { font-weight:700; color:#c93360; }
+.zero-cell { font-weight:700; color:var(--success); }
+
+/* ════════════════════════════════════════════════════════════
+   CLIENT PROFILE CARD
+════════════════════════════════════════════════════════════ */
+.client-profile-card {
+  background: white;
+  border: 1.5px solid #dde5f8;
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 28px;
+  animation: fadeInUp 0.35s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Profile header */
+.cp-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1.5px solid #f0f4ff;
+}
+
+.cp-avatar {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eef1ff, #dde6ff);
+  border: 1.5px solid #c8d4ff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.cp-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.cp-meta {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.cp-address {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Stats row */
+.cp-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+  .cp-stats-row { grid-template-columns: 1fr 1fr; }
+}
+
+.cp-stat {
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1.5px solid transparent;
+}
+
+.cp-stat span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.75;
+}
+
+.cp-stat strong {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.cp-stat-total    { background:#eef1ff; color:var(--primary);   border-color:#c8d4ff; }
+.cp-stat-billed   { background:#fffbe8; color:#7a5000;          border-color:#ffe08a; }
+.cp-stat-received { background:#e6fdf6; color:#036b4e;          border-color:#a0f0d8; }
+.cp-stat-due      { background:#fff4f7; color:#c93360;          border-color:#ffc8d4; }
+
+/* Section title */
+.cp-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid #f0f4ff;
+}
+
+/* Invoice table inside profile */
+.cp-invoice-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1.5px solid #dde5f8;
+}
+
+.cp-invoice-table { min-width: 700px; }
+.cp-invoice-table th { font-size: 11px; }
+.cp-invoice-table td { font-size: 13px; padding: 12px 14px; }
+
+/* No invoices */
+.cp-no-invoices {
+  text-align: center;
+  padding: 28px;
+  color: var(--text-muted);
+  font-size: 14px;
+  background: #f7f9ff;
+  border-radius: var(--radius-md);
+  border: 1.5px dashed #dde5f8;
+}
+
+/* Invoice action button inside profile table */
+.inv-print-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: #e6fdf6;
+  border: 1.5px solid #a0f0d8;
+  color: #036b4e;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.inv-print-btn:hover { background:#22d3a5; color:white; transform:scale(1.1); }
+
+/* ── Invoice summary chips in GetAll ─────────────────────── */
+.inv-summary-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 768px) { .inv-summary-chips { grid-template-columns: 1fr 1fr; } }
+
+.inv-chip-card {
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1.5px solid transparent;
+  animation: fadeInUp 0.3s ease;
+}
+
+.inv-chip-card span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.75;
+}
+
+.inv-chip-card strong {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.chip-total    { background:#eef1ff; color:var(--primary); border-color:#c8d4ff; }
+.chip-billed   { background:#fffbe8; color:#7a5000;        border-color:#ffe08a; }
+.chip-received { background:#e6fdf6; color:#036b4e;        border-color:#a0f0d8; }
+.chip-due      { background:#fff4f7; color:#c93360;        border-color:#ffc8d4; }
+
+.action-btn.btn-receipt-add {
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: white;
+  box-shadow: 0 6px 20px rgba(124,58,237,0.35);
+}
+.action-btn.btn-receipt-add:hover {
+  box-shadow: 0 10px 28px rgba(124,58,237,0.45);
+}
+
+/* Client row selected highlight */
+.client-row-selected td {
+  background: #eef1ff !important;
+  border-bottom: 2px solid #c8d4ff !important;
+}
+ 
+/* Close button on profile card */
+.cp-close-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: #f2f4fa;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.cp-close-btn:hover { background: #ef4444; color: white; }
+ 
+/* Client detail grid inside profile card */
+.cp-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+@media (max-width: 600px) { .cp-detail-grid { grid-template-columns: 1fr; } }
+ 
+.cp-detail-item {
+  background: #f8faff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cp-detail-key { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
+.cp-detail-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+ 
+ 
