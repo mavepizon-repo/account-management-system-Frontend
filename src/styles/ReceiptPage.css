@@ -1,5 +1,49 @@
 /* ===== RECEIPT PAGE CSS ===== */
 
+/* ── Get All Header row ─────────────────────────────────── */
+.rcp-getall-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+/* ── Excel Export Button ────────────────────────────────── */
+.rcp-excel-btn {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1.5px solid #16a34a;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.30);
+  letter-spacing: 0.3px;
+}
+.rcp-excel-btn:hover {
+  box-shadow: 0 8px 22px rgba(34,197,94,0.40);
+  transform: translateY(-1px);
+}
+
+.rcp-excel-inline-btn {
+  background: none;
+  border: none;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.rcp-excel-inline-btn:hover { background: #dcfce7; }
+
 /* ── Action Buttons ─────────────────────────────────────── */
 .action-btn.rcp-btn-add {
   background: linear-gradient(135deg, #7c3aed, #5b21b6);
@@ -47,6 +91,46 @@
   background: linear-gradient(135deg, #06d6a0, #04a87f) !important;
   box-shadow: 0 6px 20px rgba(6,214,160,0.30) !important;
   color: white !important;
+}
+
+/* ── Textarea field ─────────────────────────────────────── */
+.rcp-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── Description display ────────────────────────────────── */
+.rcp-desc-display {
+  background: #fafafa;
+  border: 1px solid #ede9fe;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+}
+.rcp-desc-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #7c3aed;
+  margin-bottom: 4px;
+}
+.rcp-desc-text {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.rcp-row-desc {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+  font-style: italic;
 }
 
 /* ── Summary Chips ──────────────────────────────────────── */
@@ -199,17 +283,6 @@
 
 .rcp-inv-project { font-size: 13px; color: #5b21b6; font-weight: 600; }
 
-/* ── Table ──────────────────────────────────────────────── */
-.rcp-table-wrap {
-  overflow-x: auto;
-  border-radius: var(--radius-md);
-  border: 1.5px solid #dde5f8;
-}
-
-.rcp-table { min-width: 900px; }
-.rcp-table th { white-space: nowrap; font-size: 11px; }
-.rcp-table td { white-space: nowrap; font-size: 13px; padding: 12px 14px; }
-
 /* ── Number Tags ────────────────────────────────────────── */
 .rcp-number-tag {
   display: inline-block;
@@ -300,11 +373,7 @@
 .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
 .empty-state p { font-size: 14px; }
 
-/* ── Responsive ─────────────────────────────────────────── */
-@media (max-width: 768px) { .rcp-balance-row { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 480px) { .rcp-balance-row { grid-template-columns: 1fr; } }
-
-/* Receipt card list */
+/* ── Receipt card list ──────────────────────────────────── */
 .rcp-card-list {
   display: flex;
   flex-direction: column;
@@ -337,7 +406,7 @@
  
 .rcp-row-right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
  
-/* Receipt detail card */
+/* ── Receipt detail card ────────────────────────────────── */
 .rcp-detail-card {
   background: white;
   border: 1.5px solid #ddd6fe;
@@ -358,4 +427,151 @@
   flex-wrap: wrap;
   gap: 10px;
 }
- 
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .rcp-balance-row { grid-template-columns: 1fr 1fr; }
+  .rcp-getall-header { gap: 8px; }
+  .rcp-excel-btn { margin-left: 0; }
+  .rcp-row-card { flex-wrap: wrap; }
+}
+@media (max-width: 480px) {
+  .rcp-balance-row { grid-template-columns: 1fr; }
+  .rcp-row-left { min-width: unset; }
+}
+
+
+/* ================================================================
+   ADVANCE PAYMENT CSS — add these to the BOTTOM of Invoicepage.css
+   AND ReceiptPage.css (or a shared file)
+================================================================ */
+
+/* ── Advance status badge ────────────────────────────────── */
+.status-advance {
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Advance tag (inline badge in invoice row/header) ────── */
+.advance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* ── Advance value in invoice row mid section ────────────── */
+.inv-row-advance {
+  font-size: 13px;
+  font-weight: 700;
+  color: #036b4e;
+  background: #e6fdf6;
+  border-radius: 6px;
+  padding: 2px 8px;
+  border: 1px solid #a0f0d8;
+}
+
+/* ── Advance totals row in summary block ─────────────────── */
+.inv-advance-row {
+  background: #e6fdf6;
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin: 4px -8px;
+}
+.inv-advance-row span { font-weight: 700 !important; color: #036b4e !important; }
+.inv-advance-row strong { color: #036b4e !important; font-size: 14px !important; }
+
+/* ── Advance note bar (info banner) ──────────────────────── */
+.advance-note-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: linear-gradient(135deg, #e6fdf6, #f0fff9);
+  border: 1.5px solid #a0f0d8;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #024d3a;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.advance-note-bar > span:first-child {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.advance-note-bar strong {
+  color: #036b4e;
+  font-weight: 700;
+}
+
+/* ── Advance preview banner (in receipt ADD form) ────────── */
+.advance-preview-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: linear-gradient(135deg, #fffbe8, #fff8e1);
+  border: 2px solid #ffb84a;
+  border-radius: 12px;
+  padding: 16px 20px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.advance-preview-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.advance-preview-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #7a5000;
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+}
+
+.advance-preview-body {
+  font-size: 13px;
+  color: #6b4200;
+  line-height: 1.65;
+}
+.advance-preview-body strong {
+  color: #7a5000;
+  font-weight: 700;
+}
+
+/* ── Receipt card advance chip ───────────────────────────── */
+.rcp-advance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Advance balance card (in receipt form) ──────────────── */
+.rcp-bc-advance {
+  background: #e6fdf6;
+  color: #036b4e;
+  border-color: #a0f0d8;
+}

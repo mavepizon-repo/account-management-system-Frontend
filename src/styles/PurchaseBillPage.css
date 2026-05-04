@@ -516,3 +516,398 @@
   font-weight: 600; 
   color: var(--text-primary); 
 }
+
+
+/* ── Items table (shared with InvoicePage style) ── */
+.items-section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 20px 0 10px;
+}
+
+.items-table-wrap {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.items-table thead tr {
+  background: #f8faff;
+  border-bottom: 2px solid #e8eeff;
+}
+
+.items-table thead th {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.items-table tbody tr {
+  border-bottom: 1px solid #f0f4ff;
+  transition: background 0.15s;
+}
+
+.items-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.items-table tbody tr:hover {
+  background: #fafbff;
+}
+
+.item-row td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.sno-cell {
+  text-align: center;
+  font-weight: 700;
+  color: #8898b0;
+  font-size: 13px;
+}
+
+.item-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: white;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.item-input:focus {
+  border-color: var(--primary);
+  background: #fafbff;
+}
+
+.item-desc { min-width: 160px; }
+.item-num  { text-align: right; }
+.item-calc {
+  background: #f8faff !important;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: not-allowed;
+}
+
+.item-remove-btn {
+  width: 26px;
+  height: 26px;
+  background: #fff4f7;
+  border: 1px solid #ffc8d4;
+  border-radius: 6px;
+  color: #c93360;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.item-remove-btn:hover {
+  background: #c93360;
+  color: white;
+}
+
+.add-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  background: #f0f4ff;
+  border: 1.5px dashed #a0b4ff;
+  border-top: none;
+  width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-item-btn:hover {
+  background: #eef1ff;
+  color: #3a5bd9;
+}
+
+.add-item-plus {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* ── Bill Totals Summary ── */
+.bill-totals-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+.bill-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 280px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #f0f4ff;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.bill-total-row strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.bill-grand-row {
+  background: #1c1c2e;
+  border-radius: 0 0 8px 8px;
+  border: none;
+  padding: 10px 14px;
+}
+
+.bill-grand-row span,
+.bill-grand-row strong {
+  color: #fff !important;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ── Get All Table enhancements ── */
+.bill-list-table th,
+.bill-list-table td {
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+
+.bill-row-selected-tr {
+  background: #eef1ff !important;
+}
+
+.bill-row-selected-tr td {
+  border-top: 1.5px solid var(--primary) !important;
+  border-bottom: 1.5px solid var(--primary) !important;
+}
+
+.gst-pct-tag {
+  background: #fffbe8;
+  color: #7a5000;
+  border: 1px solid #ffe08a;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.amt-cell {
+  font-weight: 700;
+  color: var(--primary);
+  text-align: right;
+}
+
+.paid-cell {
+  font-weight: 700;
+  color: #036b4e;
+  text-align: right;
+}
+
+.outstanding-due {
+  font-weight: 700;
+  color: #c93360;
+  text-align: right;
+}
+
+.outstanding-zero {
+  font-weight: 600;
+  color: #036b4e;
+  text-align: right;
+}
+
+.bill-table-wrap {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+}
+
+/* ═══ EXCEL DOWNLOAD SECTION ═══ */
+.excel-download-section {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.excel-download-btn {
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.excel-download-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.excel-download-btn:hover::before {
+  left: 100%;
+}
+
+.excel-download-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.excel-download-btn:not(:disabled):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.excel-download-btn:not(:disabled):active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Excel Download All Button */
+.excel-btn-all {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+.excel-btn-all:hover {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+/* Excel Download Filtered Button */
+.excel-btn-filtered {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+}
+
+.excel-btn-filtered:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+@media (max-width: 600px) {
+  .excel-download-section {
+    flex-direction: column;
+  }
+  
+  .excel-download-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ═══ BILL STAT CARDS ═══ */
+.bill-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.bill-stat-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.bill-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.bill-stat-card span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bill-stat-card strong {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.bsc-total {
+  border-color: #c8d4ff;
+  background: linear-gradient(135deg, #f0f4ff, #fafbff);
+}
+
+.bsc-total strong {
+  color: var(--primary);
+}
+
+.bsc-net {
+  border-color: #a0b4ff;
+  background: linear-gradient(135deg, #eef1ff, #f8faff);
+}
+
+.bsc-net strong {
+  color: #3a5bd9;
+}
+
+.bsc-paid {
+  border-color: #a0f0d8;
+  background: linear-gradient(135deg, #e6fdf6, #f0fef9);
+}
+
+.bsc-paid strong {
+  color: #036b4e;
+}
+
+.bsc-due {
+  border-color: #ffc8d4;
+  background: linear-gradient(135deg, #fff4f7, #fffafc);
+}
+
+.bsc-due strong {
+  color: #c93360;
+}

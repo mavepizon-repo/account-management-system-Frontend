@@ -7,23 +7,10 @@ import '../styles/AccountLedgerPage.css';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-/* ════════════════════════════════════════════════════════════
-   EXCEL EXPORT UTILITY — SheetJS (xlsx) via CDN
-   Produces a real .xlsx with:
-   - Company header row (merged, bold, large)
-   - Address row (merged, italic)
-   - Report title row (merged, bold, coloured)
-   - Filter summary row
-   - Column headers (bold, background fill)
-   - Data rows (alternating light fill)
-   - Total footer row (bold, coloured)
-   - Auto column widths
-════════════════════════════════════════════════════════════ */
-
 const COMPANY_NAME = 'DESIGN ART (INTERIOR & EXTERIOR SOLUTION)';
 const COMPANY_ADDR = '5-6, Indria Nagar, PM Samy Colony, Ratinapuri, Gandhipuram, Coimbatore 641012 | Ph: +91 9677731326 | GST: 33BNCPP2332Q1ZT';
 
-// Load SheetJS dynamically
+// ── Load SheetJS dynamically ─────────────────────────────────
 function loadSheetJS() {
   return new Promise((resolve, reject) => {
     if (window.XLSX) { resolve(window.XLSX); return; }
@@ -35,12 +22,7 @@ function loadSheetJS() {
   });
 }
 
-/**
- * exportLedgerExcel
- * @param {'income'|'expense'} type
- * @param {Array} rows  — filteredIncome or filteredExpense
- * @param {Object} meta — { totalIncome, totalExpense, filterDesc }
- */
+// ── Excel Export Helper ──────────────────────────────────────
 async function exportLedgerExcel(type, rows, meta) {
   const XLSX = await loadSheetJS();
 
@@ -48,61 +30,47 @@ async function exportLedgerExcel(type, rows, meta) {
   const sheetTitle = isIncome ? 'INCOME LEDGER' : 'EXPENSE LEDGER';
   const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
-  /* ── Column definitions ── */
   const incomeColumns = [
     { key: 'sno',         label: '#',               width: 5  },
-    { key: 'date',        label: 'Date',             width: 14 },
-    { key: 'mode',        label: 'Mode',             width: 12 },
-    { key: 'refNo',       label: 'Ref No',           width: 16 },
-    { key: 'entityName',  label: 'Client Name',      width: 24 },
-    { key: 'clientCode',  label: 'Client Code',      width: 14 },
-    { key: 'category',    label: 'Project',          width: 22 },
-    { key: 'description', label: 'Invoice Ref',      width: 20 },
-    { key: 'paymentMode', label: 'Payment Mode',     width: 15 },
-    { key: 'amount',      label: 'Amount (₹)',       width: 16 },
+    { key: 'date',        label: 'Date',            width: 14 },
+    { key: 'mode',        label: 'Mode',            width: 12 },
+    { key: 'refNo',       label: 'Ref No',          width: 16 },
+    { key: 'entityName',  label: 'Client Name',     width: 24 },
+    { key: 'clientCode',  label: 'Client Code',     width: 14 },
+    { key: 'category',    label: 'Project',         width: 22 },
+    { key: 'description', label: 'Invoice Ref',     width: 20 },
+    { key: 'paymentMode', label: 'Payment Mode',    width: 15 },
+    { key: 'amount',      label: 'Amount (₹)',      width: 16 },
     { key: 'invoiceStatus', label: 'Invoice Status', width: 15 },
   ];
 
   const expenseColumns = [
-    { key: 'sno',         label: '#',               width: 5  },
-    { key: 'date',        label: 'Date',             width: 14 },
-    { key: 'mode',        label: 'Type',             width: 12 },
-    { key: 'refNo',       label: 'Ref No',           width: 16 },
-    { key: 'entityName',  label: 'Name',             width: 24 },
-    { key: 'category',    label: 'Category',         width: 20 },
-    { key: 'description', label: 'Description/Site', width: 24 },
-    { key: 'paymentMode', label: 'Payment Mode',     width: 15 },
-    { key: 'amount',      label: 'Paid Amount (₹)',  width: 16 },
-    { key: 'totalAmount', label: 'Total Amount (₹)', width: 16 },
-    { key: 'balance',     label: 'Balance (₹)',      width: 14 },
-    { key: 'status',      label: 'Status',           width: 12 },
+    { key: 'sno',         label: '#',                 width: 5  },
+    { key: 'date',        label: 'Date',              width: 14 },
+    { key: 'mode',        label: 'Type',              width: 12 },
+    { key: 'refNo',       label: 'Ref No',            width: 16 },
+    { key: 'entityName',  label: 'Name',              width: 24 },
+    { key: 'category',    label: 'Category',          width: 20 },
+    { key: 'description', label: 'Description/Site',  width: 24 },
+    { key: 'paymentMode', label: 'Payment Mode',      width: 15 },
+    { key: 'amount',      label: 'Paid Amount (₹)',   width: 16 },
+    { key: 'totalAmount', label: 'Total Amount (₹)',  width: 16 },
+    { key: 'balance',     label: 'Balance (₹)',       width: 14 },
+    { key: 'status',      label: 'Status',            width: 12 },
   ];
 
   const columns = isIncome ? incomeColumns : expenseColumns;
   const colCount = columns.length;
-  const lastColLetter = XLSX.utils.encode_col(colCount - 1);
 
-  /* ── Build AOA (Array of Arrays) ── */
   const aoa = [];
-
-  // Row 1 — Company name
   aoa.push([COMPANY_NAME, ...Array(colCount - 1).fill('')]);
-  // Row 2 — Address
   aoa.push([COMPANY_ADDR, ...Array(colCount - 1).fill('')]);
-  // Row 3 — blank
   aoa.push(Array(colCount).fill(''));
-  // Row 4 — Report title
   aoa.push([`${sheetTitle} — Exported on ${today}`, ...Array(colCount - 1).fill('')]);
-  // Row 5 — Filter description
   aoa.push([meta.filterDesc || 'All records', ...Array(colCount - 1).fill('')]);
-  // Row 6 — blank
   aoa.push(Array(colCount).fill(''));
-  // Row 7 — Column headers
   aoa.push(columns.map(c => c.label));
 
-  const dataStartRow = aoa.length + 1; // 1-indexed Excel row
-
-  // Data rows
   rows.forEach((row, idx) => {
     if (isIncome) {
       aoa.push([
@@ -136,186 +104,77 @@ async function exportLedgerExcel(type, rows, meta) {
     }
   });
 
-  // Blank row before totals
   aoa.push(Array(colCount).fill(''));
-
-  // Total row
-  const totalLabel = isIncome
+  const amtColIdx = columns.findIndex(c => c.key === 'amount');
+  const totalRow = Array(colCount).fill('');
+  totalRow[0] = isIncome
     ? `TOTAL INCOME (${rows.length} receipts)`
     : `TOTAL EXPENSE (${rows.length} entries)`;
-  const totalRow = Array(colCount).fill('');
-  totalRow[colCount - (isIncome ? 2 : 4)] = totalLabel;
-  totalRow[colCount - (isIncome ? 1 : 4) + (isIncome ? 0 : 0)] = '';
+  totalRow[amtColIdx] = isIncome ? meta.totalIncome : meta.totalExpense;
+  aoa.push(totalRow);
 
-  // Put total in the amount column
-  const amtColIdx = columns.findIndex(c => c.key === 'amount');
-  const totalRow2 = Array(colCount).fill('');
-  totalRow2[0] = totalLabel;
-  totalRow2[amtColIdx] = isIncome ? meta.totalIncome : meta.totalExpense;
-  aoa.push(totalRow2);
-
-  /* ── Create worksheet ── */
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-  /* ── Column widths ── */
   ws['!cols'] = columns.map(c => ({ wch: c.width }));
-
-  /* ── Merges ── */
   ws['!merges'] = [
-    // Company name spans all columns — row 1
     { s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } },
-    // Address — row 2
     { s: { r: 1, c: 0 }, e: { r: 1, c: colCount - 1 } },
-    // Title — row 4
     { s: { r: 3, c: 0 }, e: { r: 3, c: colCount - 1 } },
-    // Filter desc — row 5
     { s: { r: 4, c: 0 }, e: { r: 4, c: colCount - 1 } },
-    // Total row label spans first (amtColIdx) cols
     { s: { r: aoa.length - 1, c: 0 }, e: { r: aoa.length - 1, c: amtColIdx - 1 } },
   ];
 
-  /* ── Cell styles ── */
-  // Helper: set style on a cell ref
-  const setStyle = (cellRef, style) => {
-    if (!ws[cellRef]) ws[cellRef] = { v: '', t: 's' };
-    ws[cellRef].s = style;
-  };
-
-  // Company name style
-  const companyStyle = {
-    font:      { bold: true, sz: 14, color: { rgb: '1a2560' } },
-    alignment: { horizontal: 'center', vertical: 'center' },
-    fill:      { fgColor: { rgb: 'dce8ff' }, patternType: 'solid' },
-  };
-  setStyle('A1', companyStyle);
-
-  // Address style
-  const addrStyle = {
-    font:      { italic: true, sz: 9, color: { rgb: '5a6a8a' } },
-    alignment: { horizontal: 'center', wrapText: true },
-    fill:      { fgColor: { rgb: 'dce8ff' }, patternType: 'solid' },
-  };
-  setStyle('A2', addrStyle);
-
-  // Title style
-  const titleFill = isIncome ? 'c8f7e0' : 'ffc8d4';
-  const titleColor = isIncome ? '036b4e' : 'c93360';
-  const titleStyle = {
-    font:      { bold: true, sz: 13, color: { rgb: titleColor } },
-    alignment: { horizontal: 'center', vertical: 'center' },
-    fill:      { fgColor: { rgb: titleFill }, patternType: 'solid' },
-  };
-  setStyle('A4', titleStyle);
-
-  // Filter desc style
-  const filterStyle = {
-    font:      { italic: true, sz: 10, color: { rgb: '666699' } },
-    alignment: { horizontal: 'center' },
-    fill:      { fgColor: { rgb: 'f5f7ff' }, patternType: 'solid' },
-  };
-  setStyle('A5', filterStyle);
-
-  // Header row style (row 7 = index 6)
-  const headerFill = isIncome ? '06d6a0' : 'e11d48';
-  const headerStyle = {
-    font:      { bold: true, sz: 10, color: { rgb: 'ffffff' } },
-    alignment: { horizontal: 'center', vertical: 'center' },
-    fill:      { fgColor: { rgb: headerFill }, patternType: 'solid' },
-    border: {
-      bottom: { style: 'medium', color: { rgb: 'ffffff' } },
-    },
-  };
-  for (let c = 0; c < colCount; c++) {
-    const ref = XLSX.utils.encode_cell({ r: 6, c });
-    if (!ws[ref]) ws[ref] = { v: columns[c].label, t: 's' };
-    ws[ref].s = headerStyle;
-  }
-
-  // Data rows — alternating fill + number formatting
-  const evenFill = isIncome ? 'f0fff8' : 'fff5f7';
-  const oddFill  = 'ffffff';
-
-  rows.forEach((row, idx) => {
-    const excelRow = 6 + 1 + idx; // 0-indexed: header at r=6, data starts at r=7
-    const isEven   = idx % 2 === 0;
-    const bgFill   = isEven ? evenFill : oddFill;
-
-    for (let c = 0; c < colCount; c++) {
-      const ref = XLSX.utils.encode_cell({ r: excelRow, c });
-      if (!ws[ref]) continue;
-
-      const colKey = columns[c].key;
-      const isAmtCol = ['amount', 'totalAmount', 'balance'].includes(colKey);
-
-      ws[ref].s = {
-        font:      { sz: 10 },
-        alignment: { horizontal: isAmtCol ? 'right' : c === 0 ? 'center' : 'left', vertical: 'center' },
-        fill:      { fgColor: { rgb: bgFill }, patternType: 'solid' },
-        border: {
-          bottom: { style: 'thin', color: { rgb: 'e0e8f0' } },
-        },
-      };
-
-      // Format numbers
-      if (isAmtCol && typeof ws[ref].v === 'number') {
-        ws[ref].t = 'n';
-        ws[ref].z = '#,##0.00';
-        // Colour balance red if > 0
-        if (colKey === 'balance' && ws[ref].v > 0) {
-          ws[ref].s.font = { ...ws[ref].s.font, color: { rgb: 'c93360' }, bold: true };
-        }
-        if (colKey === 'amount') {
-          ws[ref].s.font = { ...ws[ref].s.font, color: { rgb: isIncome ? '036b4e' : 'c93360' }, bold: true };
-        }
-      }
-    }
-  });
-
-  // Total footer row
-  const totalRowIdx = aoa.length - 1;
-  const totalStyle = {
-    font:      { bold: true, sz: 11, color: { rgb: isIncome ? '036b4e' : 'c93360' } },
-    alignment: { horizontal: 'right', vertical: 'center' },
-    fill:      { fgColor: { rgb: isIncome ? 'e6fdf6' : 'fff4f7' }, patternType: 'solid' },
-    border: {
-      top: { style: 'medium', color: { rgb: isIncome ? 'a0f0d8' : 'ffc8d4' } },
-    },
-  };
-  for (let c = 0; c < colCount; c++) {
-    const ref = XLSX.utils.encode_cell({ r: totalRowIdx, c });
-    if (!ws[ref]) ws[ref] = { v: '', t: 's' };
-    ws[ref].s = totalStyle;
-    if (c === amtColIdx && typeof ws[ref].v === 'number') {
-      ws[ref].t = 'n';
-      ws[ref].z = '#,##0.00';
-    }
-    if (c === 0) {
-      ws[ref].s = { ...totalStyle, alignment: { horizontal: 'left' } };
-    }
-  }
-
-  /* ── Row heights ── */
-  ws['!rows'] = [];
-  ws['!rows'][0] = { hpt: 28 }; // company name
-  ws['!rows'][1] = { hpt: 22 }; // address
-  ws['!rows'][3] = { hpt: 24 }; // title
-  ws['!rows'][6] = { hpt: 20 }; // header
-  for (let i = 7; i < 7 + rows.length; i++) {
-    ws['!rows'][i] = { hpt: 18 };
-  }
-
-  /* ── Workbook ── */
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, isIncome ? 'Income Ledger' : 'Expense Ledger');
-
-  /* ── Download ── */
   const fileName = `DesignArt_${isIncome ? 'Income' : 'Expense'}_Ledger_${new Date().toISOString().split('T')[0]}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
-/* ════════════════════════════════════════════════════════════
-   COMPONENT
-════════════════════════════════════════════════════════════ */
+// ── Format Date Helper ───────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch {
+    return '—';
+  }
+}
+
+// ── Get Voucher Receiver Name ────────────────────────────────
+// ✅ FIXED: Handles all possible voucher structures from backend
+function getVoucherReceiverName(v) {
+  // Direct receiver name (if backend sends it)
+  if (v.receiverName) return v.receiverName;
+  
+  // Populated receiver object
+  if (v.receiver && typeof v.receiver === 'object' && v.receiver.name) {
+    return v.receiver.name;
+  }
+  
+  // Vendor payment - check purchase.vendor
+  if (v.receiverType === 'Vendor' || v.receiverType === 'vendor') {
+    if (v.purchase && typeof v.purchase === 'object') {
+      const vendor = v.purchase.vendor;
+      if (typeof vendor === 'object' && vendor.name) return vendor.name;
+      if (typeof vendor === 'object' && vendor.vendorCode) return vendor.vendorCode;
+    }
+  }
+  
+  // Subcontractor payment - check workSubcontract.subcontract
+  if (v.receiverType === 'Subcontract' || v.receiverType === 'subcontractor' || v.receiverType === 'Subcontractor') {
+    if (v.workSubcontract && typeof v.workSubcontract === 'object') {
+      const sub = v.workSubcontract.subcontract;
+      if (typeof sub === 'object' && sub.name) return sub.name;
+    }
+  }
+  
+  return '—';
+}
+
+// ══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ══════════════════════════════════════════════════════════════
 function AccountLedgerPage({ onLogout }) {
   const navigate = useNavigate();
 
@@ -343,24 +202,42 @@ function AccountLedgerPage({ onLogout }) {
 
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
 
+  // ── Fetch All Data ───────────────────────────────────────────
   const fetchAll = async () => {
     try {
       setLoading(true);
       const [rRes, cRes, vRes, lRes] = await Promise.all([
         fetch(`${API}/receipt/getall`),
         fetch(`${API}/client/getall`),
-        fetch(`${API}/vouchers/getall`),
+        fetch(`${API}/vouchers/getall`), // ✅ Correct route
         fetch(`${API}/labours/getall`),
       ]);
+
+      if (!rRes.ok || !cRes.ok || !vRes.ok || !lRes.ok) {
+        throw new Error('Failed to fetch ledger data');
+      }
+
       const [rData, cData, vData, lData] = await Promise.all([
         rRes.json(), cRes.json(), vRes.json(), lRes.json(),
       ]);
-      setReceipts(rData.receipts || rData || []);
+
+      // ✅ FIXED: Handle receipt response structure
+      setReceipts(rData.receipts || (Array.isArray(rData) ? rData : (rData.data || [])));
+      
+      // ✅ FIXED: Handle client response structure
       setClients(Array.isArray(cData) ? cData : (cData.data || []));
-      setVouchers(vData.vouchers || vData || []);
-      setLabours(lData.data || []);
-    } catch {
+
+      // ✅ CRITICAL FIX: Backend /vouchers/getall returns { count, data: [...] }
+      // NOT { vouchers: [...] }
+      setVouchers(Array.isArray(vData) ? vData : (vData.data || []));
+
+      // ✅ FIXED: Handle labour response structure
+      setLabours(Array.isArray(lData) ? lData : (lData.data || []));
+
+      showToast('✅ Ledger data loaded successfully');
+    } catch (err) {
       showToast('Failed to load ledger data', 'error');
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -368,58 +245,67 @@ function AccountLedgerPage({ onLogout }) {
 
   useEffect(() => { fetchAll(); }, []);
 
-  /* ── Income rows ─────────────────────────────────────────── */
+  // ── Income Rows ──────────────────────────────────────────────
   const incomeRows = useMemo(() => receipts.map(r => ({
     id:            r._id,
     refNo:         r.receiptNumber || '—',
     mode:          'Receipt',
     date:          r.paymentDate?.split('T')[0] || '—',
-    category:      r.invoice?.project || '—',
+    dateObj:       r.paymentDate ? new Date(r.paymentDate) : null,
+    category:      r.invoice?.subject || r.invoice?.project || '—',
     entityName:    r.client?.name || '—',
     clientCode:    r.client?.clientCode || '',
     clientId:      r.client?._id || r.client || '',
-    description:   r.invoice?.invoiceNumber ? `Invoice: ${r.invoice.invoiceNumber}` : '—',
+    description:   r.invoice?.invoiceNumber ? `Invoice: ${r.invoice.invoiceNumber}` : (r.description || '—'),
     paymentMode:   r.paymentMethod || 'Cash',
     amount:        r.amountPaid || 0,
     invoiceTotal:  r.invoice?.grandTotal || 0,
     invoiceStatus: r.invoice?.paymentStatus || '—',
   })), [receipts]);
 
-  /* ── Expense rows ────────────────────────────────────────── */
+  // ── Expense Rows ─────────────────────────────────────────────
   const expenseRows = useMemo(() => {
+    // ✅ FIXED: Voucher rows with proper receiver name extraction
     const vRows = vouchers.map(v => {
-      const a      = parseFloat(v.amount)     || 0;
-      const p      = parseFloat(v.paidAmount) || 0;
-      const status = p <= 0 ? 'Unpaid' : p >= a ? 'Paid' : 'Partial';
+      const a      = parseFloat(v.amount) || 0;
+      const p      = parseFloat(v.amount) || 0; // voucher.amount IS the paid amount
+      const status = 'Paid'; // vouchers are always paid on creation
+      
       return {
         id:           v._id,
         refNo:        v.voucherNumber || '—',
         mode:         'Voucher',
         date:         v.date?.split('T')[0] || '—',
-        category:     v.receiverType === 'vendor' ? 'Vendor Payment' : 'Subcontractor Payment',
-        entityName:   v.receiverName || '—',
+        dateObj:      v.date ? new Date(v.date) : null,
+        category:     (v.receiverType === 'Vendor' || v.receiverType === 'vendor')
+                        ? 'Vendor Payment'
+                        : 'Subcontractor Payment',
+        entityName:   getVoucherReceiverName(v),
         description:  v.purpose || '—',
         paymentMode:  v.paymentMethod === 'cash'   ? 'Cash'
                     : v.paymentMethod === 'online' ? 'Online'
                     : (v.paymentMethod || '—'),
         amount:       p,
         totalAmount:  a,
-        balance:      v.balanceAmount ?? (a - p),
+        balance:      0,
         status,
         receiverType: v.receiverType || '—',
       };
     });
 
+    // ✅ FIXED: Labour rows with proper data extraction
     const lRows = labours.map(l => {
       const totalSalary = parseFloat(l.totalSalary) || 0;
       const advance     = parseFloat(l.advance)     || 0;
-      const balance     = parseFloat(l.balance) !== undefined ? parseFloat(l.balance) : (totalSalary - advance);
+      const balance     = totalSalary - advance;
       const status      = advance <= 0 ? 'Unpaid' : advance >= totalSalary ? 'Paid' : 'Partial';
+      
       return {
         id:          l._id,
         refNo:       l.labourId || '—',
         mode:        'Labour',
         date:        l.updatedAt?.split('T')[0] || l.createdAt?.split('T')[0] || '—',
+        dateObj:     l.updatedAt ? new Date(l.updatedAt) : (l.createdAt ? new Date(l.createdAt) : null),
         category:    l.workType || 'Labour',
         entityName:  l.name || '—',
         description: l.site ? `Site: ${l.site}` : `Days: ${l.daysWorked || 0}`,
@@ -434,52 +320,58 @@ function AccountLedgerPage({ onLogout }) {
       };
     });
 
+    // ✅ FIXED: Sort by date (newest first)
     return [...vRows, ...lRows].sort((a, b) => {
-      if (a.date === '—' && b.date === '—') return 0;
-      if (a.date === '—') return 1;
-      if (b.date === '—') return -1;
-      return b.date.localeCompare(a.date);
+      if (!a.dateObj && !b.dateObj) return 0;
+      if (!a.dateObj) return 1;
+      if (!b.dateObj) return -1;
+      return b.dateObj - a.dateObj;
     });
   }, [vouchers, labours]);
 
-  /* ── Filtered Income ─────────────────────────────────────── */
+  // ── Filtered Income ──────────────────────────────────────────
   const filteredIncome = useMemo(() => {
     let rows = incomeRows;
-    if (incomeSearch)
+    if (incomeSearch) {
+      const q = incomeSearch.toLowerCase();
       rows = rows.filter(r =>
-        r.entityName.toLowerCase().includes(incomeSearch.toLowerCase()) ||
-        r.refNo.toLowerCase().includes(incomeSearch.toLowerCase()) ||
-        r.category.toLowerCase().includes(incomeSearch.toLowerCase()) ||
-        r.description.toLowerCase().includes(incomeSearch.toLowerCase())
+        r.entityName.toLowerCase().includes(q) ||
+        r.refNo.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q) ||
+        r.description.toLowerCase().includes(q) ||
+        r.clientCode.toLowerCase().includes(q)
       );
+    }
     if (incomeDateFrom) rows = rows.filter(r => r.date >= incomeDateFrom);
     if (incomeDateTo)   rows = rows.filter(r => r.date <= incomeDateTo);
     if (incomeClient)   rows = rows.filter(r => r.clientId === incomeClient);
     return rows;
   }, [incomeRows, incomeSearch, incomeDateFrom, incomeDateTo, incomeClient]);
 
-  /* ── Filtered Expense ────────────────────────────────────── */
+  // ── Filtered Expense ─────────────────────────────────────────
   const filteredExpense = useMemo(() => {
     let rows = expenseRows;
     if (expenseType !== 'All') rows = rows.filter(r => r.mode === expenseType);
-    if (expenseSearch)
+    if (expenseSearch) {
+      const q = expenseSearch.toLowerCase();
       rows = rows.filter(r =>
-        r.entityName.toLowerCase().includes(expenseSearch.toLowerCase()) ||
-        r.refNo.toLowerCase().includes(expenseSearch.toLowerCase()) ||
-        r.description.toLowerCase().includes(expenseSearch.toLowerCase()) ||
-        r.category.toLowerCase().includes(expenseSearch.toLowerCase())
+        r.entityName.toLowerCase().includes(q) ||
+        r.refNo.toLowerCase().includes(q) ||
+        r.description.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q)
       );
+    }
     if (expenseDateFrom) rows = rows.filter(r => r.date >= expenseDateFrom);
     if (expenseDateTo)   rows = rows.filter(r => r.date <= expenseDateTo);
     return rows;
   }, [expenseRows, expenseType, expenseSearch, expenseDateFrom, expenseDateTo]);
 
-  /* ── Totals ──────────────────────────────────────────────── */
+  // ── Totals ───────────────────────────────────────────────────
   const totalIncome  = filteredIncome.reduce((s, r) => s + r.amount, 0);
   const totalExpense = filteredExpense.reduce((s, r) => s + r.amount, 0);
   const netBalance   = totalIncome - totalExpense;
 
-  /* ── Excel Export ────────────────────────────────────────── */
+  // ── Excel Export ─────────────────────────────────────────────
   const handleExport = async () => {
     try {
       setExporting(true);
@@ -491,12 +383,11 @@ function AccountLedgerPage({ onLogout }) {
         return;
       }
 
-      // Build filter description string
       const parts = [];
       if (isIncome) {
         if (incomeSearch)    parts.push(`Search: "${incomeSearch}"`);
-        if (incomeDateFrom)  parts.push(`From: ${incomeDateFrom}`);
-        if (incomeDateTo)    parts.push(`To: ${incomeDateTo}`);
+        if (incomeDateFrom)  parts.push(`From: ${formatDate(incomeDateFrom)}`);
+        if (incomeDateTo)    parts.push(`To: ${formatDate(incomeDateTo)}`);
         if (incomeClient) {
           const cl = clients.find(c => c._id === incomeClient);
           if (cl) parts.push(`Client: ${cl.name}`);
@@ -504,59 +395,66 @@ function AccountLedgerPage({ onLogout }) {
       } else {
         if (expenseType !== 'All') parts.push(`Type: ${expenseType}`);
         if (expenseSearch)   parts.push(`Search: "${expenseSearch}"`);
-        if (expenseDateFrom) parts.push(`From: ${expenseDateFrom}`);
-        if (expenseDateTo)   parts.push(`To: ${expenseDateTo}`);
+        if (expenseDateFrom) parts.push(`From: ${formatDate(expenseDateFrom)}`);
+        if (expenseDateTo)   parts.push(`To: ${formatDate(expenseDateTo)}`);
       }
+
       const filterDesc = parts.length > 0
         ? `Filters applied — ${parts.join(' | ')}`
         : `All records — No filters applied`;
 
-      await exportLedgerExcel(activeTab, rows, {
-        totalIncome,
-        totalExpense,
-        filterDesc,
-      });
-
+      await exportLedgerExcel(activeTab, rows, { totalIncome, totalExpense, filterDesc });
       showToast(`📊 ${isIncome ? 'Income' : 'Expense'} Ledger exported successfully!`);
     } catch (err) {
       showToast('Export failed. Please try again.', 'error');
-      console.error(err);
+      console.error('Export error:', err);
     } finally {
       setExporting(false);
     }
   };
 
-  /* ── Helpers ─────────────────────────────────────────────── */
+  // ── Status Badge Helper ──────────────────────────────────────
   const statusBadge = (s) => {
+    const normalized = String(s || '').toLowerCase();
     const map = {
-      Paid: 'status-paid', paid: 'status-paid',
-      Partial: 'status-partial', partial: 'status-partial',
-      Unpaid: 'status-pending', unpaid: 'status-pending',
+      paid: 'status-paid',
+      partial: 'status-partial',
+      unpaid: 'status-pending',
     };
     const label = s ? (s.charAt(0).toUpperCase() + s.slice(1)) : '—';
-    return <span className={`status-badge ${map[s] || 'status-pending'}`}>{label}</span>;
+    return <span className={`status-badge ${map[normalized] || 'status-pending'}`}>{label}</span>;
   };
 
+  // ── Clear Filters ────────────────────────────────────────────
   const clearIncomeFilters  = () => {
-    setIncomeSearch(''); setIncomeDateFrom(''); setIncomeDateTo(''); setIncomeClient('');
-  };
-  const clearExpenseFilters = () => {
-    setExpenseSearch(''); setExpenseDateFrom(''); setExpenseDateTo(''); setExpenseType('All');
+    setIncomeSearch('');
+    setIncomeDateFrom('');
+    setIncomeDateTo('');
+    setIncomeClient('');
   };
 
+  const clearExpenseFilters = () => {
+    setExpenseSearch('');
+    setExpenseDateFrom('');
+    setExpenseDateTo('');
+    setExpenseType('All');
+  };
+
+  // ── Filter Status ────────────────────────────────────────────
   const incomeHasFilter  = incomeSearch || incomeDateFrom || incomeDateTo || incomeClient;
   const expenseHasFilter = expenseSearch || expenseDateFrom || expenseDateTo || expenseType !== 'All';
 
+  // ── Counts ───────────────────────────────────────────────────
   const voucherCount = expenseRows.filter(r => r.mode === 'Voucher').length;
   const labourCount  = expenseRows.filter(r => r.mode === 'Labour').length;
 
-  /* ── RENDER ──────────────────────────────────────────────── */
+  // ── Render ───────────────────────────────────────────────────
   return (
     <div className="entity-wrapper">
       <Navbar onLogout={onLogout} />
       <div className="entity-main">
 
-        {/* ── Page Header ── */}
+        {/* Header */}
         <div className="entity-page-header">
           <button className="back-btn" onClick={() => navigate('/dashboard')}>←</button>
           <h1 className="entity-page-title">📒 Account Ledger</h1>
@@ -565,9 +463,13 @@ function AccountLedgerPage({ onLogout }) {
           </span>
         </div>
 
-        {loading && <div className="loading-bar"><div className="loading-inner" /></div>}
+        {loading && (
+          <div className="loading-bar">
+            <div className="loading-inner" />
+          </div>
+        )}
 
-        {/* ── Summary Chips ── */}
+        {/* Summary Chips */}
         <div className="ledger-summary-chips">
           <div className="ledger-chip lc-income">
             <span>💚 Total Income</span>
@@ -587,7 +489,7 @@ function AccountLedgerPage({ onLogout }) {
           </div>
         </div>
 
-        {/* ── Tab Toggle + Export ── */}
+        {/* Tab Toggle + Export */}
         <div className="ledger-topbar">
           <div className="ledger-tab-row">
             <button
@@ -607,7 +509,7 @@ function AccountLedgerPage({ onLogout }) {
           <button
             className={`ledger-export-btn ${exporting ? 'exporting' : ''}`}
             onClick={handleExport}
-            disabled={exporting}>
+            disabled={exporting || (activeTab === 'income' ? filteredIncome.length === 0 : filteredExpense.length === 0)}>
             {exporting
               ? <><span className="export-spinner" />Exporting...</>
               : <>📊 Export to Excel</>
@@ -615,11 +517,14 @@ function AccountLedgerPage({ onLogout }) {
           </button>
         </div>
 
-        {/* ══ INCOME PANEL ══ */}
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* INCOME PANEL */}
+        {/* ══════════════════════════════════════════════════════════ */}
         {activeTab === 'income' && (
           <div className="panel-section" key="income">
             <div className="ledger-section-title">💚 Income Details — All Receipts</div>
 
+            {/* Filters */}
             <div className="ledger-filters-row">
               <div className="ledger-filter-field" style={{ flex: 1, minWidth: 200 }}>
                 <label>🔍 Search</label>
@@ -632,17 +537,27 @@ function AccountLedgerPage({ onLogout }) {
               </div>
               <div className="ledger-filter-field">
                 <label>📅 From Date</label>
-                <input className="ledger-filter-input" type="date"
-                  value={incomeDateFrom} onChange={e => setIncomeDateFrom(e.target.value)} />
+                <input
+                  className="ledger-filter-input"
+                  type="date"
+                  value={incomeDateFrom}
+                  onChange={e => setIncomeDateFrom(e.target.value)}
+                />
               </div>
               <div className="ledger-filter-field">
                 <label>📅 To Date</label>
-                <input className="ledger-filter-input" type="date"
-                  value={incomeDateTo} onChange={e => setIncomeDateTo(e.target.value)} />
+                <input
+                  className="ledger-filter-input"
+                  type="date"
+                  value={incomeDateTo}
+                  onChange={e => setIncomeDateTo(e.target.value)}
+                />
               </div>
               <div className="ledger-filter-field">
                 <label>👤 Filter by Client</label>
-                <select className="ledger-filter-select" value={incomeClient}
+                <select
+                  className="ledger-filter-select"
+                  value={incomeClient}
                   onChange={e => setIncomeClient(e.target.value)}>
                   <option value="">All Clients</option>
                   {clients.map(c => (
@@ -657,7 +572,7 @@ function AccountLedgerPage({ onLogout }) {
               )}
             </div>
 
-            {/* Mini stat cards */}
+            {/* Mini Stats */}
             <div className="ledger-mini-stats">
               <div className="ledger-mini-card lmc-total">
                 <span>Receipts</span>
@@ -681,13 +596,13 @@ function AccountLedgerPage({ onLogout }) {
               </div>
             </div>
 
-            {/* Results badge */}
             {incomeHasFilter && (
               <div className="ledger-results-badge">
                 Showing <strong>{filteredIncome.length}</strong> of <strong>{incomeRows.length}</strong> records
               </div>
             )}
 
+            {/* Table or Empty State */}
             {filteredIncome.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">💚</div>
@@ -714,7 +629,7 @@ function AccountLedgerPage({ onLogout }) {
                     {filteredIncome.map((row, idx) => (
                       <tr key={row.id} className={idx % 2 === 0 ? 'row-even' : 'row-odd'}>
                         <td className="col-sno">{idx + 1}</td>
-                        <td className="col-date">{row.date}</td>
+                        <td className="col-date">{formatDate(row.date)}</td>
                         <td><span className="type-badge-income">{row.mode}</span></td>
                         <td><span className="ledger-ref-tag ref-income">{row.refNo}</span></td>
                         <td>
@@ -746,11 +661,14 @@ function AccountLedgerPage({ onLogout }) {
           </div>
         )}
 
-        {/* ══ EXPENSE PANEL ══ */}
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* EXPENSE PANEL */}
+        {/* ══════════════════════════════════════════════════════════ */}
         {activeTab === 'expense' && (
           <div className="panel-section" key="expense">
             <div className="ledger-section-title">🔴 Expense Details — Vouchers & Labour</div>
 
+            {/* Filters */}
             <div className="ledger-filters-row">
               <div className="ledger-filter-field" style={{ flex: 1, minWidth: 200 }}>
                 <label>🔍 Search</label>
@@ -763,13 +681,21 @@ function AccountLedgerPage({ onLogout }) {
               </div>
               <div className="ledger-filter-field">
                 <label>📅 From Date</label>
-                <input className="ledger-filter-input" type="date"
-                  value={expenseDateFrom} onChange={e => setExpenseDateFrom(e.target.value)} />
+                <input
+                  className="ledger-filter-input"
+                  type="date"
+                  value={expenseDateFrom}
+                  onChange={e => setExpenseDateFrom(e.target.value)}
+                />
               </div>
               <div className="ledger-filter-field">
                 <label>📅 To Date</label>
-                <input className="ledger-filter-input" type="date"
-                  value={expenseDateTo} onChange={e => setExpenseDateTo(e.target.value)} />
+                <input
+                  className="ledger-filter-input"
+                  type="date"
+                  value={expenseDateTo}
+                  onChange={e => setExpenseDateTo(e.target.value)}
+                />
               </div>
               <div className="ledger-filter-field">
                 <label>🏷️ Expense Type</label>
@@ -779,7 +705,8 @@ function AccountLedgerPage({ onLogout }) {
                     { key: 'Voucher', label: `🗂️ Vouchers (${voucherCount})` },
                     { key: 'Labour',  label: `👷 Labour (${labourCount})` },
                   ].map(t => (
-                    <button key={t.key}
+                    <button
+                      key={t.key}
                       className={`expense-type-tab ${expenseType === t.key ? 'active' : ''}`}
                       onClick={() => setExpenseType(t.key)}>
                       {t.label}
@@ -794,7 +721,7 @@ function AccountLedgerPage({ onLogout }) {
               )}
             </div>
 
-            {/* Mini stat cards */}
+            {/* Mini Stats */}
             <div className="ledger-mini-stats">
               <div className="ledger-mini-card lmc-total">
                 <span>Total Entries</span>
@@ -820,6 +747,7 @@ function AccountLedgerPage({ onLogout }) {
               </div>
             )}
 
+            {/* Table or Empty State */}
             {filteredExpense.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">🔴</div>
@@ -848,7 +776,7 @@ function AccountLedgerPage({ onLogout }) {
                     {filteredExpense.map((row, idx) => (
                       <tr key={`${row.mode}-${row.id}`} className={idx % 2 === 0 ? 'row-even' : 'row-odd'}>
                         <td className="col-sno">{idx + 1}</td>
-                        <td className="col-date">{row.date}</td>
+                        <td className="col-date">{formatDate(row.date)}</td>
                         <td>
                           {row.mode === 'Voucher'
                             ? <span className="type-badge-expense">🗂️ Voucher</span>
@@ -906,6 +834,7 @@ function AccountLedgerPage({ onLogout }) {
         )}
 
       </div>
+
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
