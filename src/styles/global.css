@@ -104,220 +104,253 @@ a {
 
 
 /* ══════════════════════════════════════════════════════════
-   MOBILE RESPONSIVE — GLOBAL
+   MOBILE RESPONSIVE — COMPLETE
+   Targets ≤768px (tablet) and ≤480px (phone)
 ══════════════════════════════════════════════════════════ */
 
 /* ── Navbar ─────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .navbar {
-    padding: 0 16px;
-    height: 60px;
-  }
-
-  .navbar-title {
-    font-size: 16px;
-  }
-
-  .navbar-username {
-    display: none;
-  }
-
-  .navbar-user {
-    padding: 6px 10px;
-    gap: 6px;
-  }
-
-  .logout-btn {
-    padding: 7px 12px;
-    font-size: 12px;
-  }
-
-  .logout-btn span {
-    display: none;
-  }
+  .navbar { padding: 0 16px; height: 56px; }
+  .navbar-title { font-size: 15px; }
+  .navbar-username { display: none; }
+  .navbar-user { padding: 5px 10px; gap: 6px; }
+  .logout-btn { padding: 7px 12px; font-size: 12px; }
 }
 
 /* ── Dashboard ──────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .dashboard-main {
-    padding: 24px 16px;
-  }
-
-  .dashboard-title {
-    font-size: 26px;
-  }
-
-  .dashboard-subtitle {
-    font-size: 14px;
-  }
-
-  .cards-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-
-  .dashboard-card {
-    padding: 22px 18px;
-  }
-
-  .card-icon-wrap {
-    width: 48px;
-    height: 48px;
-    font-size: 22px;
-  }
-
-  .card-title {
-    font-size: 16px;
-  }
-
-  .card-desc {
-    font-size: 12px;
-  }
-
-  .stats-row {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
+  .dashboard-main { padding: 20px 14px; }
+  .dashboard-title { font-size: 24px; }
+  .dashboard-subtitle { font-size: 13px; }
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .cards-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dashboard-card { padding: 20px 16px; }
+  .card-icon-wrap { width: 46px; height: 46px; font-size: 20px; margin-bottom: 12px; }
+  .card-title { font-size: 15px; }
+  .card-desc { font-size: 11px; }
+  .section-label { margin-top: 24px; margin-bottom: 12px; }
 }
 
-@media (max-width: 480px) {
-  .cards-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 400px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .cards-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Entity Pages (Client, Invoice, Receipt etc.) ───────── */
+/* ── Entity page header ─────────────────────────────────── */
 @media (max-width: 768px) {
-  .entity-main {
-    padding: 20px 14px;
-  }
+  .entity-main { padding: 16px 14px; }
+  .entity-page-header { margin-bottom: 16px; gap: 8px; }
+  .entity-page-title { font-size: 18px; }
+  .entity-page-badge { font-size: 11px; padding: 4px 10px; }
+  .back-btn { width: 36px; height: 36px; font-size: 15px; }
+}
 
-  .entity-page-title {
-    font-size: 20px;
-  }
-
-  .entity-page-header {
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .back-btn {
-    width: 38px;
-    height: 38px;
-    font-size: 16px;
-  }
-
-  /* Action buttons — horizontal scroll */
+/* ── ACTION BUTTONS — vertical stack on mobile ──────────── */
+@media (max-width: 768px) {
   .actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
-    margin-bottom: 20px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    margin-bottom: 18px;
+    flex-wrap: unset;
+    overflow-x: unset;
   }
-  .actions-row::-webkit-scrollbar { display: none; }
 
   .action-btn {
-    padding: 10px 16px;
-    font-size: 13px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    padding: 10px 12px;
+    font-size: 12px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+    border-radius: 10px;
+    flex-shrink: unset;
   }
+}
 
-  /* Panel */
-  .panel-section {
-    padding: 20px 14px;
+@media (max-width: 400px) {
+  .actions-row {
+    grid-template-columns: 1fr;
   }
+}
 
-  .panel-title {
-    font-size: 16px;
-    margin-bottom: 16px;
-  }
+/* ── Panel section ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  .panel-section { padding: 16px 14px; border-radius: 14px; }
+  .panel-title { font-size: 15px; margin-bottom: 14px; }
 
-  /* Forms */
   .form-row {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
-
-  .form-field.full-width {
-    grid-column: 1;
-  }
-
-  .field-input {
-    padding: 11px 14px;
-    font-size: 14px;
-  }
+  .form-field.full-width { grid-column: 1; }
+  .field-label { font-size: 12px; margin-bottom: 5px; }
+  .field-input { padding: 10px 13px; font-size: 13px; border-radius: 10px; }
 
   .submit-btn {
-    padding: 12px 20px;
-    font-size: 13px;
     width: 100%;
     justify-content: center;
+    padding: 12px;
+    font-size: 13px;
   }
 
-  /* Delete input row */
-  .delete-input-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  /* Detail card */
-  .detail-key {
-    min-width: 100px;
-  }
+  .delete-input-row { flex-direction: column; }
+  .detail-key { min-width: 90px; font-size: 12px; }
+  .detail-val { font-size: 12px; }
+  .update-found-badge { flex-direction: column; gap: 5px; }
 }
 
-/* ── Tables — horizontal scroll on mobile ───────────────── */
+/* ── Summary chips ──────────────────────────────────────── */
 @media (max-width: 768px) {
-  .clients-table,
-  .invoice-table,
-  .ledger-table,
-  .rcp-table,
-  .receipt-subtable,
-  .cp-invoice-table,
-  .sub-work-table,
-  .vnd-bill-table {
-    font-size: 12px;
-  }
-
-  .clients-table th,
-  .clients-table td {
-    padding: 10px 10px;
-  }
-
-  /* Wrap all table containers */
-  .invoice-table-wrap,
-  .ledger-table-wrap,
-  .rcp-table-wrap,
-  .cp-invoice-table-wrap,
-  .sub-work-table-wrap,
-  .vnd-bill-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* ── Summary chips / stat cards ─────────────────────────── */
-@media (max-width: 480px) {
   .ledger-summary-chips,
   .inv-summary-chips,
   .rcp-summary-chips,
   .att-summary-chips,
   .voucher-stat-cards,
   .bill-stat-cards,
-  .work-summary-chips {
+  .work-summary-chips,
+  .ledger-mini-stats {
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .cp-stats-row,
   .labour-stats-row,
-  .vnd-stats-row,
-  .sub-stats-row {
+  .sub-stats-row,
+  .vnd-stats-row {
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .ledger-chip,
+  .inv-chip-card,
+  .rcp-chip,
+  .att-chip,
+  .vsc,
+  .bill-stat-card,
+  .work-chip-card,
+  .ledger-mini-card,
+  .cp-stat,
+  .labour-stat,
+  .sub-stat,
+  .vnd-stat {
+    padding: 12px;
+    font-size: 12px;
+  }
+}
+
+/* ── TABLE → CARD VIEW on mobile ───────────────────────── */
+/*
+   All tables become a stacked card list on mobile.
+   Each <tr> becomes a card, each <td> shows label + value.
+   The <thead> is hidden.
+*/
+@media (max-width: 768px) {
+  /* Hide thead */
+  .clients-table thead,
+  .ledger-table thead,
+  .cp-invoice-table thead,
+  .sub-work-table thead,
+  .vnd-bill-table thead,
+  .receipt-subtable thead,
+  .cp-invoice-table thead {
+    display: none;
+  }
+
+  /* Table → block */
+  .clients-table,
+  .ledger-table,
+  .cp-invoice-table,
+  .sub-work-table,
+  .vnd-bill-table,
+  .receipt-subtable {
+    display: block;
+  }
+
+  /* tbody → block */
+  .clients-table tbody,
+  .ledger-table tbody,
+  .cp-invoice-table tbody,
+  .sub-work-table tbody,
+  .vnd-bill-table tbody,
+  .receipt-subtable tbody {
+    display: block;
+  }
+
+  /* Each row = card */
+  .clients-table tr,
+  .ledger-table tr,
+  .cp-invoice-table tr,
+  .sub-work-table tr,
+  .vnd-bill-table tr,
+  .receipt-subtable tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 14px 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Each cell = label-value pair */
+  .clients-table td,
+  .ledger-table td,
+  .cp-invoice-table td,
+  .sub-work-table td,
+  .vnd-bill-table td,
+  .receipt-subtable td {
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  /* Show data-label as the column name */
+  .clients-table td::before,
+  .ledger-table td::before,
+  .cp-invoice-table td::before,
+  .sub-work-table td::before,
+  .vnd-bill-table td::before,
+  .receipt-subtable td::before {
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  /* Full-width cells (action buttons, long text) */
+  .clients-table td.td-full,
+  .ledger-table td.td-full {
+    grid-column: 1 / -1;
+  }
+
+  /* tfoot row */
+  .clients-table tfoot tr,
+  .ledger-table tfoot tr {
+    grid-template-columns: 1fr;
+  }
+
+  /* Inline edit row — special */
+  .clients-table tr.inline-edit-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* col-sno hide on mobile */
+  .col-sno { display: none !important; }
+
+  /* Table wrap — no overflow scroll needed now */
+  .ledger-table-wrap,
+  .cp-invoice-table-wrap,
+  .sub-work-table-wrap,
+  .vnd-bill-table-wrap {
+    overflow-x: unset;
   }
 }
 
@@ -327,181 +360,48 @@ a {
     flex-direction: column;
     gap: 10px;
   }
-
   .ledger-filter-field {
     min-width: unset;
     width: 100%;
   }
-
-  .ledger-tab-row {
-    width: 100%;
+  .ledger-topbar {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
   }
-
+  .ledger-tab-row { width: 100%; }
   .ledger-tab {
     flex: 1;
     justify-content: center;
-    padding: 10px 12px;
-    font-size: 13px;
+    padding: 9px 8px;
+    font-size: 12px;
   }
+  .ledger-export-btn { width: 100%; justify-content: center; }
+  .expense-type-tabs { flex-wrap: wrap; gap: 6px; }
+  .expense-type-tab { font-size: 11px; padding: 6px 10px; }
 }
 
-/* ── Invoice status filter tabs ─────────────────────────── */
-@media (max-width: 480px) {
+/* ── Invoice / Status filter tabs ───────────────────────── */
+@media (max-width: 768px) {
   .inv-status-filter-row,
-  .rcp-filter-row,
-  .work-filter-tabs {
+  .rcp-filter-row {
     gap: 6px;
+    flex-wrap: wrap;
   }
-
-  .inv-filter-tab,
-  .rcp-filter-tab,
-  .work-filter-tab {
+  .inv-filter-tab, .rcp-filter-tab {
     padding: 7px 12px;
-    font-size: 12px;
-  }
-}
-
-/* ── Client / Labour profile cards ─────────────────────── */
-@media (max-width: 600px) {
-  .cp-header,
-  .labour-cp-header,
-  .vnd-cp-header,
-  .sub-cp-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .cp-avatar,
-  .labour-cp-avatar,
-  .vnd-cp-avatar,
-  .sub-cp-avatar {
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-  }
-
-  .cp-name,
-  .labour-cp-name,
-  .vnd-cp-name,
-  .sub-cp-name {
-    font-size: 17px;
-  }
-}
-
-/* ── Inline edit row ────────────────────────────────────── */
-@media (max-width: 768px) {
-  .inline-edit-input {
-    min-width: 60px;
-    font-size: 12px;
-    padding: 6px 8px;
-  }
-}
-
-/* ── Report card (Labour) ───────────────────────────────── */
-@media (max-width: 768px) {
-  .report-card {
-    max-width: 100%;
-  }
-
-  .report-action-btns {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .report-action-btns {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Receipt balance row ────────────────────────────────── */
-@media (max-width: 600px) {
-  .rcp-balance-row {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* ── Detail card grids ──────────────────────────────────── */
-@media (max-width: 600px) {
-  .inv-detail-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .att-detail-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .bill-detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .voucher-detail-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Update found badge ─────────────────────────────────── */
-@media (max-width: 480px) {
-  .update-found-badge {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-}
-
-/* ── Pay modal ──────────────────────────────────────────── */
-@media (max-width: 480px) {
-  .pay-modal {
-    padding: 20px 16px;
-    margin: 12px;
-    max-width: calc(100vw - 24px);
-  }
-
-  .pay-modal-actions {
-    flex-direction: column;
-  }
-
-  .pay-cancel-btn {
-    width: 100%;
+    font-size: 11px;
+    flex: 1;
     text-align: center;
+    justify-content: center;
   }
-}
-
-/* ── Login ──────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  .login-card {
-    padding: 32px 20px;
-    margin: 16px;
-  }
-
-  .login-title {
-    font-size: 22px;
-  }
-}
-
-/* ── Voucher form ───────────────────────────────────────── */
-@media (max-width: 560px) {
-  .voucher-form-grid,
-  .bill-form-grid,
-  .sub-form-grid,
-  .work-form-grid,
-  .labour-form-grid {
+  .multi-filter-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 }
 
-/* ── Toast notification ─────────────────────────────────── */
-@media (max-width: 480px) {
-  .toast {
-    bottom: 16px;
-    right: 12px;
-    left: 12px;
-    font-size: 13px;
-    padding: 12px 16px;
-  }
-}
-
-/* ── Invoice / Bill card lists ──────────────────────────── */
+/* ── Invoice / Bill / Receipt card rows ─────────────────── */
 @media (max-width: 600px) {
   .inv-row-card,
   .bill-row-card,
@@ -510,119 +410,147 @@ a {
   .work-row-card {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
-    padding: 14px 16px;
+    gap: 8px;
+    padding: 14px;
   }
-
-  .inv-row-left,
-  .inv-row-mid,
-  .inv-row-right,
-  .bill-row-left,
-  .bill-row-mid,
-  .bill-row-right,
-  .rcp-row-left,
-  .rcp-row-mid,
-  .rcp-row-right,
-  .voucher-row-left,
-  .voucher-row-mid,
-  .voucher-row-right,
-  .work-row-left,
-  .work-row-mid,
-  .work-row-right {
+  .inv-row-left, .inv-row-mid, .inv-row-right,
+  .bill-row-left, .bill-row-mid, .bill-row-right,
+  .rcp-row-left, .rcp-row-mid, .rcp-row-right,
+  .voucher-row-left, .voucher-row-mid, .voucher-row-right,
+  .work-row-left, .work-row-mid, .work-row-right {
     min-width: unset;
     width: 100%;
   }
-
-  .inv-row-right,
-  .bill-row-right,
-  .rcp-row-right,
-  .voucher-row-right,
-  .work-row-right {
+  .inv-row-right, .bill-row-right, .rcp-row-right,
+  .voucher-row-right, .work-row-right {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
   }
+  .invoice-action-btns, .rcp-action-btns { margin-top: 0; }
 }
 
-/* ── Attendance form grid ───────────────────────────────── */
-@media (max-width: 560px) {
-  .att-form-grid {
+/* ── Profile cards ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  .cp-header, .labour-cp-header, .vnd-cp-header, .sub-cp-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .cp-name, .labour-cp-name, .vnd-cp-name, .sub-cp-name { font-size: 16px; }
+}
+
+/* ── Detail grids ───────────────────────────────────────── */
+@media (max-width: 600px) {
+  .inv-detail-grid, .att-detail-grid, .cp-detail-grid,
+  .att-detail-grid, .labour-stats-row {
     grid-template-columns: 1fr 1fr;
+  }
+  .bill-detail-grid, .voucher-detail-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Attendance ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .att-form-grid { grid-template-columns: 1fr 1fr; }
+  .att-filter-row { grid-template-columns: 1fr; gap: 10px; }
+  .att-labour-info, .att-calc-preview, .labour-calc-preview {
+    flex-direction: column; gap: 8px;
+  }
+  .att-info-item, .calc-item {
+    border-right: none; padding-right: 0; margin-right: 0;
+    border-bottom: 1px solid var(--border); padding-bottom: 8px;
+  }
+  .att-info-item:last-child, .calc-item:last-child {
+    border-bottom: none; padding-bottom: 0;
   }
 }
 
 @media (max-width: 400px) {
-  .att-form-grid {
-    grid-template-columns: 1fr;
-  }
+  .att-form-grid { grid-template-columns: 1fr; }
 }
 
-/* ── Labour / Att info preview ──────────────────────────── */
-@media (max-width: 600px) {
-  .att-labour-info,
-  .att-calc-preview,
-  .labour-calc-preview {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .att-info-item,
-  .calc-item {
-    border-right: none;
-    padding-right: 0;
-    margin-right: 0;
-    border-bottom: 1px solid #f0f4ff;
-    padding-bottom: 8px;
-  }
-
-  .att-info-item:last-child,
-  .calc-item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-}
-
-/* ── Att filter row ─────────────────────────────────────── */
-@media (max-width: 600px) {
-  .att-filter-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Report section (2-col → 1-col) ────────────────────── */
-@media (max-width: 600px) {
-  .report-section {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* ── Invoice inline edit table ──────────────────────────── */
+/* ── Work subcontract filters ───────────────────────────── */
 @media (max-width: 768px) {
-  .invoice-table th:nth-child(n+7),
-  .invoice-table td:nth-child(n+7) {
-    display: none;
+  .work-filters-row { flex-direction: column; gap: 10px; }
+  .work-filter-tabs, .pay-filter-tab { flex-wrap: wrap; gap: 6px; }
+  .work-filter-tab, .pay-filter-tab {
+    padding: 7px 10px; font-size: 11px; flex: 1; text-align: center;
   }
 }
 
-/* ── Ledger tab row wrap on small screens ───────────────── */
+/* ── Voucher form ───────────────────────────────────────── */
+@media (max-width: 560px) {
+  .voucher-form-grid, .bill-form-grid, .sub-form-grid,
+  .work-form-grid, .labour-form-grid, .invoice-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .voucher-type-toggle { flex-wrap: wrap; gap: 6px; }
+  .vtype-btn { flex: 1; text-align: center; padding: 8px 10px; font-size: 12px; }
+  .voucher-preview-bar {
+    flex-direction: column; gap: 6px; padding: 12px;
+  }
+}
+
+/* ── Report section ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .report-card { max-width: 100%; }
+  .report-action-btns { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 480px) {
-  .ledger-tab-row {
-    width: 100%;
-    justify-content: stretch;
-  }
+  .report-action-btns { grid-template-columns: 1fr; }
+}
 
-  .ledger-tab {
-    flex: 1;
-    padding: 9px 8px;
-    font-size: 12px;
-    justify-content: center;
+/* ── Receipt balance row ────────────────────────────────── */
+@media (max-width: 600px) {
+  .rcp-balance-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Receipt client info ────────────────────────────────── */
+@media (max-width: 480px) {
+  .rcp-client-info-row { flex-direction: column; gap: 8px; }
+}
+
+/* ── Getall filter bar ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .getall-filter-bar { flex-direction: column; gap: 10px; align-items: stretch; }
+  .getall-search-wrap { width: 100%; }
+  .getall-sort-tabs { flex-wrap: wrap; gap: 4px; }
+}
+
+/* ── Pay modal ──────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .pay-modal { padding: 18px 14px; margin: 10px; max-width: calc(100vw - 20px); }
+  .pay-modal-actions { flex-direction: column; }
+  .pay-cancel-btn { width: 100%; text-align: center; }
+}
+
+/* ── Login ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-card { padding: 28px 18px; margin: 14px; }
+  .login-title { font-size: 20px; }
+}
+
+/* ── Toast ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .toast {
+    bottom: 14px; right: 10px; left: 10px;
+    font-size: 12px; padding: 11px 14px;
   }
 }
 
-/* ── Entity page badge hide on small ───────────────────── */
-@media (max-width: 360px) {
-  .entity-page-badge {
-    display: none;
+/* ── SearchableDropdown on mobile ───────────────────────── */
+@media (max-width: 768px) {
+  .sd-dropdown, .sdd-dropdown {
+    max-height: 220px;
   }
+  .sd-option, .sdd-option {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+/* ── Badge hide on tiny screens ─────────────────────────── */
+@media (max-width: 360px) {
+  .entity-page-badge { display: none; }
 }

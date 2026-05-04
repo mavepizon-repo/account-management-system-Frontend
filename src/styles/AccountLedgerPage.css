@@ -71,6 +71,11 @@
   color: white;
   box-shadow: 0 4px 14px rgba(239,71,111,0.35);
 }
+.ledger-tab.tab-all.active {
+  background: linear-gradient(135deg, #4361ee, #2541c4);
+  color: white;
+  box-shadow: 0 4px 14px rgba(67,97,238,0.35);
+}
 .ledger-tab:not(.active):hover { background: white; color: var(--text-primary); }
 
 .ledger-tab-count {
@@ -207,8 +212,9 @@
 .lmc-expense { background: #fff4f7; color: #c93360;        border-color: #ffc8d4; }
 .lmc-clients { background: #eef1ff; color: var(--primary); border-color: #c8d4ff; }
 .lmc-avg     { background: #fdf4ff; color: #7c3aed;        border-color: #ddb3ff; }
+/* ✅ FIXED: Labour card now RED (was green) */
 .lmc-voucher { background: #fff4f7; color: #c93360;        border-color: #ffc8d4; }
-.lmc-labour  { background: #e6fdf6; color: #04a87f;        border-color: #a0f0d8; }
+.lmc-labour  { background: #fff4f7; color: #c93360;        border-color: #ffc8d4; }
 
 /* ── Results badge ───────────────────────────────────────── */
 .ledger-results-badge {
@@ -277,8 +283,9 @@
   border-top: 2px solid;
 }
 
-.income-total-row td  { background: #e6fdf6 !important; border-top-color: #a0f0d8; }
+.income-total-row  td { background: #e6fdf6 !important; border-top-color: #a0f0d8; }
 .expense-total-row td { background: #fff4f7 !important; border-top-color: #ffc8d4; }
+.all-total-row     td { background: #eef1ff !important; border-top-color: #c8d4ff; }
 
 .total-label {
   text-align: right;
@@ -296,9 +303,11 @@
   border-radius: 6px; font-size: 12px; font-weight: 800;
   letter-spacing: 0.3px; white-space: nowrap;
 }
-.ref-income  { background: #e6fdf6; color: #036b4e; border: 1px solid #a0f0d8; }
-.ref-expense { background: #fff4f7; color: #c93360; border: 1px solid #ffc8d4; }
-.ref-labour  { background: #e6fdf6; color: #04a87f; border: 1px solid #a0f0d8; }
+.ref-income     { background: #e6fdf6; color: #036b4e; border: 1px solid #a0f0d8; }
+.ref-expense    { background: #fff4f7; color: #c93360; border: 1px solid #ffc8d4; }
+/* ✅ FIXED: Labour ref tag now RED (was green) */
+.ref-labour     { background: #fff4f7; color: #c93360; border: 1px solid #ffc8d4; }
+.ref-labour-red { background: #fff4f7; color: #c93360; border: 1px solid #ffc8d4; }
 
 /* ── Type Badges ──────────────────────────────────────────── */
 .type-badge-income {
@@ -311,9 +320,27 @@
   border: 1px solid #ffc8d4; padding: 3px 10px;
   border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
 }
+/* ✅ FIXED: Labour badge now RED (was green .type-badge-labour) */
 .type-badge-labour {
-  display: inline-block; background: #e6fdf6; color: #04a87f;
+  display: inline-block; background: #fff4f7; color: #c93360;
+  border: 1px solid #ffc8d4; padding: 3px 10px;
+  border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.type-badge-labour-red {
+  display: inline-block; background: #fff4f7; color: #c93360;
+  border: 1px solid #ffc8d4; padding: 3px 10px;
+  border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+
+/* ── Txn Type Badges (All tab) ────────────────────────────── */
+.txn-badge-income {
+  display: inline-block; background: #e6fdf6; color: #036b4e;
   border: 1px solid #a0f0d8; padding: 3px 10px;
+  border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.txn-badge-expense {
+  display: inline-block; background: #fff4f7; color: #c93360;
+  border: 1px solid #ffc8d4; padding: 3px 10px;
   border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap;
 }
 

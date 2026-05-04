@@ -129,7 +129,7 @@
   white-space: nowrap;
 }
 
-/* Summary stat cards */
+/* ── Summary stat cards ──────────────────────────────── */
 .inv-summary-chips {
   display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;
 }
@@ -148,7 +148,7 @@
 .chip-received { background:#e6fdf6; color:#036b4e;        border-color:#a0f0d8; }
 .chip-due      { background:#fff4f7; color:#c93360;        border-color:#ffc8d4; }
 
-/* STATUS FILTER TABS */
+/* ── STATUS FILTER TABS ──────────────────────────────── */
 .inv-status-filter-row {
   display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap;
 }
@@ -185,12 +185,12 @@
 
 .inv-filter-tab.active { border-width:2px; font-weight:700; }
 
-/* Loading bar */
+/* ── Loading bar ─────────────────────────────────────── */
 .loading-bar { height:3px; background:#eef1ff; border-radius:99px; overflow:hidden; margin-bottom:20px; }
 .loading-inner { height:100%; width:38%; background:linear-gradient(90deg,#a0b4ff,#5b7fff,#a0b4ff); border-radius:99px; animation:loadingSlide 1.2s ease-in-out infinite; }
 @keyframes loadingSlide { 0%{transform:translateX(-120%);} 100%{transform:translateX(380%);} }
 
-/* Status badges */
+/* ── Status badges ───────────────────────────────────── */
 .status-badge { padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap; }
 .status-paid    { background:#e6fdf6; color:#036b4e; border:1px solid #a0f0d8; }
 .status-partial { background:#fffbe8; color:#7a5000; border:1px solid #ffe08a; }
@@ -204,13 +204,13 @@
 @media (max-width:768px) { .invoice-form-grid { grid-template-columns:1fr 1fr; } }
 @media (max-width:480px) { .invoice-form-grid { grid-template-columns:1fr; } }
 
-/* Invoice card list — replaces table in GET ALL */
+/* ── Invoice card list ───────────────────────────────── */
 .inv-card-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
- 
+
 .inv-row-card {
   display: flex;
   align-items: center;
@@ -225,20 +225,20 @@
 }
 .inv-row-card:hover { border-color: #c8d4ff; background: #fafbff; transform: translateX(3px); }
 .inv-row-selected  { border-color: var(--primary) !important; background: #eef1ff !important; }
- 
+
 .inv-row-left { flex: 0 0 auto; min-width: 180px; }
 .inv-row-project { font-weight: 700; font-size: 15px; color: var(--text-primary); margin-top: 6px; }
 .inv-row-client  { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
- 
+
 .inv-row-mid { flex: 1; }
 .inv-row-date { font-size: 12px; color: var(--text-secondary); }
 .inv-row-amt  { font-size: 15px; font-weight: 800; color: var(--primary); }
 .inv-row-paid { font-size: 13px; font-weight: 600; color: #036b4e; }
 .inv-row-bal  { font-size: 13px; font-weight: 700; color: #c93360; }
- 
+
 .inv-row-right { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
- 
-/* Invoice detail card */
+
+/* ── Invoice detail card ─────────────────────────────── */
 .inv-detail-card {
   background: white;
   border: 1.5px solid #dde5f8;
@@ -247,7 +247,7 @@
   animation: fadeInUp 0.3s ease;
   box-shadow: var(--shadow-sm);
 }
- 
+
 .inv-detail-header {
   display: flex;
   justify-content: space-between;
@@ -258,7 +258,7 @@
   flex-wrap: wrap;
   gap: 10px;
 }
- 
+
 .inv-detail-close {
   width: 30px; height: 30px;
   border-radius: 8px;
@@ -270,7 +270,7 @@
   cursor: pointer; transition: var(--transition);
 }
 .inv-detail-close:hover { background: #ef4444; color: white; }
- 
+
 .inv-detail-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -279,7 +279,7 @@
 }
 @media (max-width: 900px) { .inv-detail-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 600px) { .inv-detail-grid { grid-template-columns: 1fr 1fr; } }
- 
+
 .inv-detail-item {
   background: #f8faff;
   border: 1px solid var(--border);
@@ -291,8 +291,8 @@
 }
 .inv-detail-key { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
 .inv-detail-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
- 
-/* Edit card */
+
+/* ── Edit card ───────────────────────────────────────── */
 .inv-edit-card {
   background: #fffdf0;
   border: 2px solid #ffd166;
@@ -305,5 +305,333 @@
   justify-content: space-between;
   align-items: center;
 }
- 
- 
+
+/* ── Items table ─────────────────────────────────────── */
+.items-section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 20px 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid #f0f4ff;
+}
+
+.items-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1.5px solid #dde5f8;
+  margin-bottom: 4px;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 780px;
+}
+
+.items-table thead tr {
+  background: #f4f7ff;
+}
+
+.items-table th {
+  padding: 11px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1.5px solid #dde5f8;
+}
+
+.items-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f4ff;
+  vertical-align: middle;
+}
+
+.items-table tbody tr:last-child td { border-bottom: none; }
+.items-table tbody tr:hover td { background: #fafbff; }
+
+.sno-cell {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.item-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  background: white;
+  color: var(--text-primary);
+  transition: border-color 0.18s;
+  box-sizing: border-box;
+}
+.item-input:focus { outline: none; border-color: var(--primary); background: #fafbff; }
+.item-input.item-desc { min-width: 160px; }
+.item-input.item-num  { min-width: 64px; text-align: right; }
+.item-input.item-calc {
+  background: #f4f7ff;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: not-allowed;
+  border-color: #e4eaf8;
+  text-align: right;
+}
+.item-input.item-net {
+  background: #eef1ff;
+  color: var(--primary);
+  font-weight: 800;
+  border-color: #c8d4ff;
+}
+
+.item-remove-btn {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #fff4f7;
+  border: 1.5px solid #ffc8d4;
+  color: #c93360;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition);
+}
+.item-remove-btn:hover { background: #ff6b8a; color: white; transform: scale(1.1); }
+
+/* Items table totals row */
+.items-totals-row td {
+  background: #f4f7ff !important;
+  padding: 10px 10px !important;
+  border-top: 2px solid #dde5f8 !important;
+}
+
+.total-cell {
+  font-weight: 800;
+  color: var(--primary);
+  font-size: 13px;
+  text-align: right;
+}
+
+.grand-total-cell {
+  font-size: 15px !important;
+  color: var(--primary) !important;
+}
+
+/* Add item button */
+.add-item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  background: #eef1ff;
+  border: 1.5px dashed #c8d4ff;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.add-item-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(91,127,255,0.28);
+}
+.add-item-plus {
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+/* ── Invoice totals summary block ────────────────────── */
+.invoice-totals-summary {
+  background: #f8faff;
+  border: 1.5px solid #dde5f8;
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-top: 16px;
+  max-width: 360px;
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inv-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 2px 0;
+}
+
+.inv-total-row span { font-weight: 500; }
+.inv-total-row strong { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+
+.inv-grand-row {
+  border-top: 2px solid #dde5f8;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+.inv-grand-row span   { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.inv-grand-row strong { font-size: 17px; font-weight: 800; color: var(--primary); }
+
+/* ── Advance payment tag ─────────────────────────────── */
+.advance-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* ================================================================
+   ADVANCE PAYMENT CSS — add these to the BOTTOM of Invoicepage.css
+   AND ReceiptPage.css (or a shared file)
+================================================================ */
+
+/* ── Advance status badge ────────────────────────────────── */
+.status-advance {
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Advance tag (inline badge in invoice row/header) ────── */
+.advance-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* ── Advance value in invoice row mid section ────────────── */
+.inv-row-advance {
+  font-size: 13px;
+  font-weight: 700;
+  color: #036b4e;
+  background: #e6fdf6;
+  border-radius: 6px;
+  padding: 2px 8px;
+  border: 1px solid #a0f0d8;
+}
+
+/* ── Advance totals row in summary block ─────────────────── */
+.inv-advance-row {
+  background: #e6fdf6;
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin: 4px -8px;
+}
+.inv-advance-row span { font-weight: 700 !important; color: #036b4e !important; }
+.inv-advance-row strong { color: #036b4e !important; font-size: 14px !important; }
+
+/* ── Advance note bar (info banner) ──────────────────────── */
+.advance-note-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: linear-gradient(135deg, #e6fdf6, #f0fff9);
+  border: 1.5px solid #a0f0d8;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #024d3a;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.advance-note-bar > span:first-child {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.advance-note-bar strong {
+  color: #036b4e;
+  font-weight: 700;
+}
+
+/* ── Advance preview banner (in receipt ADD form) ────────── */
+.advance-preview-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: linear-gradient(135deg, #fffbe8, #fff8e1);
+  border: 2px solid #ffb84a;
+  border-radius: 12px;
+  padding: 16px 20px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.advance-preview-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.advance-preview-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #7a5000;
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+}
+
+.advance-preview-body {
+  font-size: 13px;
+  color: #6b4200;
+  line-height: 1.65;
+}
+.advance-preview-body strong {
+  color: #7a5000;
+  font-weight: 700;
+}
+
+/* ── Receipt card advance chip ───────────────────────────── */
+.rcp-advance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  border-radius: 20px;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Advance balance card (in receipt form) ──────────────── */
+.rcp-bc-advance {
+  background: #e6fdf6;
+  color: #036b4e;
+  border-color: #a0f0d8;
+}

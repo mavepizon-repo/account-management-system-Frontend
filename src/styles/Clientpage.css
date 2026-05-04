@@ -33,6 +33,20 @@
   border: 1px solid #c8d4ff;
 }
 
+/* ── GST tag in table ────────────────────────────────────── */
+.gst-tag {
+  background: #f0fff4;
+  color: #036b4e;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  border: 1px solid #a0f0d8;
+  font-family: monospace;
+}
+
 /* ── Invoices count badge in table ───────────────────────── */
 .invoices-count-badge {
   background: #f0f4ff;
@@ -59,6 +73,58 @@
 .paid-cell { font-weight:700; color:var(--success); }
 .due-cell  { font-weight:700; color:#c93360; }
 .zero-cell { font-weight:700; color:var(--success); }
+
+/* ── Advance payment tag ─────────────────────────────────── */
+.advance-tag {
+  display: inline-flex;
+  align-items: center;
+  background: #e6fdf6;
+  color: #036b4e;
+  border: 1px solid #a0f0d8;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* ── Get All header row (title + export button) ──────────── */
+.getall-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Excel export button ─────────────────────────────────── */
+.excel-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(34,197,94,0.35);
+  transition: box-shadow 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.excel-export-btn span {
+  font-size: 15px;
+}
+.excel-export-btn:hover {
+  box-shadow: 0 8px 22px rgba(34,197,94,0.45);
+  transform: translateY(-1px);
+}
+.excel-export-btn:active {
+  transform: translateY(0);
+}
 
 /* ════════════════════════════════════════════════════════════
    CLIENT PROFILE CARD
@@ -113,6 +179,26 @@
 
 .cp-address {
   font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Extra info chips (contact person, GST) */
+.cp-extra-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.cp-extra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f4f7ff;
+  border: 1px solid #dde5f8;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-secondary);
 }
 
@@ -175,7 +261,7 @@
   border: 1.5px solid #dde5f8;
 }
 
-.cp-invoice-table { min-width: 700px; }
+.cp-invoice-table { min-width: 780px; }
 .cp-invoice-table th { font-size: 11px; }
 .cp-invoice-table td { font-size: 13px; padding: 12px 14px; }
 
@@ -257,7 +343,7 @@
   background: #eef1ff !important;
   border-bottom: 2px solid #c8d4ff !important;
 }
- 
+
 /* Close button on profile card */
 .cp-close-btn {
   width: 32px; height: 32px;
@@ -272,7 +358,7 @@
   margin-left: auto;
 }
 .cp-close-btn:hover { background: #ef4444; color: white; }
- 
+
 /* Client detail grid inside profile card */
 .cp-detail-grid {
   display: grid;
@@ -281,7 +367,7 @@
   margin-bottom: 4px;
 }
 @media (max-width: 600px) { .cp-detail-grid { grid-template-columns: 1fr; } }
- 
+
 .cp-detail-item {
   background: #f8faff;
   border: 1px solid var(--border);
@@ -293,5 +379,190 @@
 }
 .cp-detail-key { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
 .cp-detail-val { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+
+/* ── Status filter tabs (shared with invoice page) ───────── */
+.inv-status-filter-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.inv-filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 50px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border: 1.5px solid transparent;
+  background: white;
+}
+
+.inv-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.filter-all { color: var(--text-secondary); border-color: #dde5f8; }
+.filter-all .inv-filter-count { background: #eef1ff; color: var(--primary); }
+.filter-all:hover, .filter-all.active { background: #eef1ff; border-color: #c8d4ff; color: var(--primary); }
+
+.filter-paid { color: #036b4e; border-color: #a0f0d8; }
+.filter-paid .inv-filter-count { background: #e6fdf6; color: #036b4e; }
+.filter-paid:hover, .filter-paid.active { background: #e6fdf6; border-color: #5de8c8; color: #024d3a; box-shadow: 0 3px 12px rgba(34,211,165,0.18); }
+
+.filter-partial { color: #7a5000; border-color: #ffe08a; }
+.filter-partial .inv-filter-count { background: #fffbe8; color: #7a5000; }
+.filter-partial:hover, .filter-partial.active { background: #fffbe8; border-color: #ffb84a; color: #6b4200; box-shadow: 0 3px 12px rgba(255,184,74,0.20); }
+
+.filter-unpaid { color: #c93360; border-color: #ffc8d4; }
+.filter-unpaid .inv-filter-count { background: #fff4f7; color: #c93360; }
+.filter-unpaid:hover, .filter-unpaid.active { background: #fff4f7; border-color: #ff8fab; color: #a0193f; box-shadow: 0 3px 12px rgba(255,107,138,0.18); }
+
+.inv-filter-tab.active { border-width: 2px; font-weight: 700; }
+
+
+/* ── Edit button in profile card header ──────────────────── */
+.cp-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffe08a, #ffb84a);
+  border: none;
+  color: #6b4200;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255,184,74,0.30);
+  transition: box-shadow 0.2s, transform 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cp-edit-btn:hover {
+  box-shadow: 0 8px 22px rgba(255,184,74,0.45);
+  transform: translateY(-1px);
+}
  
+/* ── Modal overlay ───────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 60, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease;
+}
+ 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+ 
+/* ── Modal card ──────────────────────────────────────────── */
+.modal-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(15, 23, 60, 0.22), 0 8px 24px rgba(91,127,255,0.12);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.22s ease;
+  border: 1.5px solid #dde5f8;
+}
+ 
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+ 
+/* ── Modal header ────────────────────────────────────────── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px 18px;
+  border-bottom: 1.5px solid #f0f4ff;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+ 
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+ 
+.modal-close-btn {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: #f2f4fa;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--transition);
+  flex-shrink: 0;
+}
+.modal-close-btn:hover { background: #ef4444; color: white; border-color: #ef4444; }
+ 
+/* ── Modal form grid ─────────────────────────────────────── */
+.modal-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  padding: 22px 24px 6px;
+}
+@media (max-width: 560px) { .modal-form-grid { grid-template-columns: 1fr; } }
+ 
+.modal-form-grid .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+ 
+.modal-form-grid .full-width {
+  grid-column: 1 / -1;
+}
+ 
+/* ── Modal footer ────────────────────────────────────────── */
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 24px 22px;
+  border-top: 1.5px solid #f0f4ff;
+  margin-top: 8px;
+}
+ 
+.modal-cancel-btn {
+  padding: 11px 24px;
+  border-radius: 10px;
+  background: #f2f4fa;
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+.modal-cancel-btn:hover { background: #e4e8f4; color: var(--text-primary); }
  
