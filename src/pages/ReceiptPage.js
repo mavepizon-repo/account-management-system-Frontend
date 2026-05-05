@@ -19,6 +19,7 @@ function SearchableDropdown({ options, value, onChange, placeholder, getLabel, g
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
   }, []);
+  
 
   const selected = options.find(o => getId(o) === value);
   const filtered = query.trim()
