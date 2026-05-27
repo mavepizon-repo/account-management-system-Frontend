@@ -314,3 +314,218 @@
   font-weight: 700;
   font-size: 11px;
 }
+/* ─── Attendance Auto-fill Preview Card ─────────────────────────────────────── */
+.lv-preview-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1.5px solid #86efac;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 14px 0 10px;
+  animation: lv-preview-fade-in 0.35s ease;
+}
+
+@keyframes lv-preview-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lv-preview-card.lv-preview-loading {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.lv-preview-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #e2e8f0;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: lv-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes lv-spin {
+  to { transform: rotate(360deg); }
+}
+
+.lv-preview-card.lv-preview-empty {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #9a3412;
+  font-size: 13.5px;
+}
+
+.lv-preview-empty-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.lv-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #166534;
+  margin-bottom: 14px;
+}
+
+.lv-preview-dot {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.2);
+  animation: lv-dot-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes lv-dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(34,197,94,0.2); }
+  50%       { box-shadow: 0 0 0 6px rgba(34,197,94,0.08); }
+}
+
+.lv-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .lv-preview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.lv-preview-item {
+  background: rgba(255,255,255,0.75);
+  border: 1px solid rgba(134,239,172,0.5);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lv-preview-item--payable {
+  background: rgba(255,255,255,0.95);
+  border-color: #22c55e;
+  grid-column: span 1;
+}
+
+.lv-preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b7c5f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lv-preview-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #14532d;
+}
+
+.lv-ot-val   { color: #d97706; }
+.lv-salary-val { color: #166534; }
+.lv-advance-val { color: #c93360; }
+.lv-payable-val { color: #15803d; font-size: 19px; }
+
+/* ─── Advance Deduction Control ──────────────────────────────────────────────── */
+.lv-advance-deduct-box {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1.5px solid #fdba74;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 14px 0 10px;
+  animation: lv-preview-fade-in 0.3s ease;
+}
+
+.lv-advance-deduct-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #9a3412;
+  margin-bottom: 14px;
+}
+
+.lv-advance-deduct-modes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.lv-deduct-mode-btn {
+  flex: 1;
+  min-width: 130px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.lv-deduct-mode-btn:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.lv-deduct-mode-btn.lv-deduct-active {
+  background: linear-gradient(135deg, #166534, #15803d);
+  border-color: #15803d;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(21,128,61,0.25);
+}
+
+.lv-deduct-mode-btn.lv-deduct-active.lv-deduct-partial {
+  background: linear-gradient(135deg, #d97706, #f59e0b);
+  border-color: #d97706;
+  box-shadow: 0 4px 12px rgba(217,119,6,0.25);
+}
+
+.lv-deduct-mode-btn.lv-deduct-active.lv-deduct-none {
+  background: linear-gradient(135deg, #c93360, #e11d48);
+  border-color: #c93360;
+  box-shadow: 0 4px 12px rgba(201,51,96,0.25);
+}
+
+.lv-partial-input-wrap {
+  margin-top: 14px;
+  animation: lv-preview-fade-in 0.25s ease;
+}
+
+/* ─── Final Payable Banner ───────────────────────────────────────────────────── */
+.lv-final-payable-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #14532d, #166534);
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin: 10px 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(21,128,61,0.3);
+}
+
+.lv-final-payable-banner strong {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}

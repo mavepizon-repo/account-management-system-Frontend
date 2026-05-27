@@ -12,28 +12,26 @@ import '../styles/SearchableDropdown.css';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PANELS = { ADD: 'add', UPDATE: 'update', DELETE: 'delete', GETALL: 'getall' };
 
-// ── Empty item factory ───────────────────────────────────
 const emptyItem = () => ({
-  id: Date.now() + Math.random(),
+  id:          Date.now() + Math.random(),
   description: '',
-  qty: '1',
-  rate: '',
-  gstPercent: '0',
-  amount: '',
-  gstAmount: '',
-  netTotal: '',
+  qty:         '1',
+  rate:        '',
+  gstPercent:  '0',
+  amount:      '',
+  gstAmount:   '',
+  netTotal:    '',
 });
 
 const emptyBill = {
-  vendor: '',
-  invoiceNo: '',
-  date: new Date().toISOString().split('T')[0],
+  vendor:      '',
+  invoiceNo:   '',
+  date:        new Date().toISOString().split('T')[0],
   invoiceDate: new Date().toISOString().split('T')[0],
-  notes: '',
-  items: [emptyItem()],
+  notes:       '',
+  items:       [emptyItem()],
 };
 
-// ── Item calculation helpers ─────────────────────────────
 function calcItem(item, key, value) {
   const u         = { ...item, [key]: value };
   const qty       = parseFloat(u.qty)        || 0;
@@ -66,13 +64,12 @@ function buildProducts(items) {
   }));
 }
 
-// ── Items Table Component ────────────────────────────────
+// ── Items Table ───────────────────────────────────────────
 function ItemsTable({ items, onChange, onAdd, onRemove }) {
   const handleCell = (idx, key, value) => {
     const updated = items.map((item, i) => i === idx ? calcItem(item, key, value) : item);
     onChange(updated);
   };
-
   return (
     <div className="items-table-wrap">
       <table className="items-table">
@@ -142,7 +139,6 @@ function ItemsTable({ items, onChange, onAdd, onRemove }) {
   );
 }
 
-// ── Totals Summary ───────────────────────────────────────
 function TotalsSummary({ items }) {
   const { totalAmount, totalGST, grandTotal } = calcTotals(items);
   if (totalAmount <= 0) return null;
@@ -164,9 +160,6 @@ function TotalsSummary({ items }) {
   );
 }
 
-// ══════════════════════════════════════════════════════════
-// BillHeaderFields — OUTSIDE main component to fix re-mount bug
-// ══════════════════════════════════════════════════════════
 function BillHeaderFields({ form, setForm, vendorOpts }) {
   return (
     <div className="form-row bill-form-grid">
@@ -181,39 +174,183 @@ function BillHeaderFields({ form, setForm, vendorOpts }) {
       </div>
       <div className="form-field">
         <label className="field-label">Subject / Invoice No *</label>
-        <input
-          className="field-input"
-          placeholder="e.g. INV-001 or subject"
+        <input className="field-input" placeholder="e.g. INV-001 or subject"
           value={form.invoiceNo}
-          onChange={e => setForm(prev => ({ ...prev, invoiceNo: e.target.value }))}
-        />
+          onChange={e => setForm(prev => ({ ...prev, invoiceNo: e.target.value }))} />
       </div>
       <div className="form-field">
         <label className="field-label">Purchase Date *</label>
-        <input
-          className="field-input"
-          type="date"
-          value={form.date}
-          onChange={e => setForm(prev => ({ ...prev, date: e.target.value }))}
-        />
+        <input className="field-input" type="date" value={form.date}
+          onChange={e => setForm(prev => ({ ...prev, date: e.target.value }))} />
       </div>
       <div className="form-field">
         <label className="field-label">Invoice Date *</label>
-        <input
-          className="field-input"
-          type="date"
-          value={form.invoiceDate}
-          onChange={e => setForm(prev => ({ ...prev, invoiceDate: e.target.value }))}
-        />
+        <input className="field-input" type="date" value={form.invoiceDate}
+          onChange={e => setForm(prev => ({ ...prev, invoiceDate: e.target.value }))} />
       </div>
       <div className="form-field full-width">
         <label className="field-label">Notes</label>
-        <input
-          className="field-input"
-          placeholder="Additional notes"
+        <input className="field-input" placeholder="Additional notes"
           value={form.notes}
-          onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))}
-        />
+          onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} />
+      </div>
+    </div>
+  );
+}
+
+// ── Advance Preview Panel (same as InvoicePage but for vendors/vouchers) ──
+function AdvancePreviewPanel({ vendorId, grandTotal, advanceVouchers }) {
+  if (!vendorId || advanceVouchers.length === 0) return null;
+
+  let billRemaining  = grandTotal;
+  let totalWillApply = 0;
+  const breakdown    = [];
+
+  for (const v of advanceVouchers) {
+    if (billRemaining <= 0) break;
+    const apply = Math.min(v.remainingAmount, billRemaining);
+    billRemaining  -= apply;
+    totalWillApply += apply;
+    breakdown.push({
+      voucherNumber:    v.voucherNumber || v.sno || '—',
+      date:             v.date || v.createdAt,
+      currentRemaining: v.remainingAmount,
+      willApply:        apply,
+      afterApply:       v.remainingAmount - apply,
+    });
+  }
+
+  const totalAvailable        = advanceVouchers.reduce((s, v) => s + v.remainingAmount, 0);
+  const advanceAfterBill      = totalAvailable - totalWillApply;
+  const billBalanceAfter      = Math.max(0, grandTotal - totalWillApply);
+
+  return (
+    <div style={{
+      marginBottom: 20,
+      borderRadius: 12,
+      border: '1.5px solid #c4b5fd',
+      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '12px 16px',
+        background: '#7c3aed',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>💰</span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
+            Vendor Advance Available — Auto-Apply Preview
+          </span>
+        </div>
+        <span style={{
+          background: 'rgba(255,255,255,0.2)', color: '#fff',
+          borderRadius: 20, padding: '2px 12px', fontSize: 13, fontWeight: 700,
+        }}>
+          ₹{Number(totalAvailable).toLocaleString('en-IN')} Total Advance
+        </span>
+      </div>
+
+      <div style={{ padding: '14px 16px' }}>
+        {/* Voucher breakdown table */}
+        {breakdown.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#7c3aed', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Vouchers that will be used (oldest first):
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{
+                width: '100%', borderCollapse: 'collapse', fontSize: 13,
+                background: '#fff', borderRadius: 8, overflow: 'hidden',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+              }}>
+                <thead>
+                  <tr style={{ background: '#faf5ff' }}>
+                    {['Voucher No', 'Date', 'Current Balance', 'Will Apply', 'Remaining After'].map(h => (
+                      <th key={h} style={{
+                        padding: '8px 12px',
+                        textAlign: h === 'Voucher No' || h === 'Date' ? 'left' : 'right',
+                        fontWeight: 700, color: '#7c3aed', fontSize: 11,
+                        borderBottom: '1px solid #ddd6fe',
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {breakdown.map((row, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #f3e8ff' }}>
+                      <td style={{ padding: '8px 12px' }}>
+                        <span style={{
+                          background: '#f3e8ff', color: '#7c3aed', borderRadius: 6,
+                          padding: '2px 8px', fontWeight: 700, fontSize: 12,
+                          border: '1px solid #ddd6fe',
+                        }}>
+                          {row.voucherNumber}
+                        </span>
+                      </td>
+                      <td style={{ padding: '8px 12px', color: '#555', fontSize: 12 }}>
+                        {row.date ? new Date(row.date).toLocaleDateString('en-IN') : '—'}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600, color: '#333' }}>
+                        ₹{Number(row.currentRemaining).toLocaleString('en-IN')}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 800, color: '#7c3aed' }}>
+                        − ₹{Number(row.willApply).toLocaleString('en-IN')}
+                      </td>
+                      <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: row.afterApply === 0 ? '#aaa' : '#7a5000' }}>
+                        {row.afterApply === 0
+                          ? <span style={{ fontSize: 11, color: '#aaa' }}>Exhausted</span>
+                          : `₹${Number(row.afterApply).toLocaleString('en-IN')}`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Summary cards */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', paddingTop: 10, borderTop: '1px solid #ddd6fe' }}>
+          {grandTotal > 0 ? (
+            <>
+              <div style={{ flex: 1, minWidth: 150, background: '#fff', borderRadius: 10, padding: '10px 14px', border: '1px solid #ddd6fe' }}>
+                <div style={{ fontSize: 11, color: '#7c3aed', fontWeight: 700, marginBottom: 4 }}>Bill Total</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>₹{Number(grandTotal).toLocaleString('en-IN')}</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 150, background: '#fff', borderRadius: 10, padding: '10px 14px', border: '1px solid #ddd6fe' }}>
+                <div style={{ fontSize: 11, color: '#7c3aed', fontWeight: 700, marginBottom: 4 }}>Advance Will Apply</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#7c3aed' }}>₹{Number(totalWillApply).toLocaleString('en-IN')}</div>
+              </div>
+              <div style={{
+                flex: 1, minWidth: 150, borderRadius: 10, padding: '10px 14px',
+                background: billBalanceAfter > 0 ? '#fff4f7' : '#e6fdf6',
+                border: `1px solid ${billBalanceAfter > 0 ? '#ffc8d4' : '#a0f0d8'}`,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: billBalanceAfter > 0 ? '#c93360' : '#036b4e' }}>
+                  {billBalanceAfter > 0 ? 'Balance After Creation' : 'Status After Creation'}
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: billBalanceAfter > 0 ? '#c93360' : '#036b4e' }}>
+                  {billBalanceAfter > 0
+                    ? `₹${Number(billBalanceAfter).toLocaleString('en-IN')}`
+                    : '✓ Fully Paid'}
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 150, background: '#fffbe8', borderRadius: 10, padding: '10px 14px', border: '1px solid #ffe08a' }}>
+                <div style={{ fontSize: 11, color: '#7a5000', fontWeight: 700, marginBottom: 4 }}>Advance Remaining After</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#7a5000' }}>₹{Number(advanceAfterBill).toLocaleString('en-IN')}</div>
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 13, color: '#555', fontStyle: 'italic' }}>
+              Enter purchase items above to see advance application preview.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -231,6 +368,9 @@ function PurchaseBillPage({ onLogout }) {
   const [toast,       setToast]       = useState(null);
   const [loading,     setLoading]     = useState(false);
 
+  // Voucher advance map: { vendorId: [{ voucherNumber, remainingAmount, date, ... }] }
+  const [vendorAdvanceMap, setVendorAdvanceMap] = useState({});
+
   const [addForm,      setAddForm]      = useState(emptyBill);
   const [updateBillId, setUpdateBillId] = useState('');
   const [updateFound,  setUpdateFound]  = useState(null);
@@ -243,9 +383,11 @@ function PurchaseBillPage({ onLogout }) {
   const [vendorFilter,   setVendorFilter]   = useState('');
   const [searchText,     setSearchText]     = useState('');
 
+  const [lastCreateInfo, setLastCreateInfo] = useState(null);
+
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
 
-  // ── Fetch ────────────────────────────────────────────────
+  // ── Fetch vendors ─────────────────────────────────────
   const fetchVendors = async () => {
     try {
       const res  = await fetch(`${API}/vendor/getall`);
@@ -254,6 +396,7 @@ function PurchaseBillPage({ onLogout }) {
     } catch { showToast('Failed to fetch vendors', 'error'); }
   };
 
+  // ── Fetch bills ───────────────────────────────────────
   const fetchBills = async () => {
     try {
       setLoading(true);
@@ -264,7 +407,45 @@ function PurchaseBillPage({ onLogout }) {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchVendors(); fetchBills(); }, []);
+  // ── Fetch vendor advance vouchers ─────────────────────
+  // Vouchers with remainingAmount > 0 and not fully consumed
+  const fetchVendorAdvances = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/voucher/getall`);
+      const data = await res.json();
+      const vouchers = Array.isArray(data) ? data : (data.data || data.vouchers || []);
+
+      // Build map: vendorId → sorted vouchers with remaining balance
+      const map = {};
+      vouchers.forEach(v => {
+        const rem = Number(v.remainingAmount ?? 0);
+        if (rem <= 0) return; // skip exhausted vouchers
+
+        const vid = v.vendor?._id || (typeof v.vendor === 'string' ? v.vendor : null);
+        if (!vid) return;
+
+        if (!map[vid]) map[vid] = [];
+        map[vid].push({
+          _id:             v._id,
+          voucherNumber:   v.voucherNumber || v.sno || '—',
+          date:            v.date || v.createdAt,
+          remainingAmount: rem,
+          totalAmount:     v.totalAmount || v.amount || rem,
+        });
+      });
+
+      // Sort each vendor's vouchers oldest first (FIFO — same as backend)
+      Object.keys(map).forEach(vid => {
+        map[vid].sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+
+      setVendorAdvanceMap(map);
+    } catch {
+      // Silently fail — advance preview just won't show
+    }
+  }, []);
+
+  useEffect(() => { fetchVendors(); fetchBills(); fetchVendorAdvances(); }, [fetchVendorAdvances]);
 
   const togglePanel = (panel) => {
     setPanel(prev => prev === panel ? null : panel);
@@ -273,51 +454,52 @@ function PurchaseBillPage({ onLogout }) {
     setDeleteBillId(''); setDeleteFound(null);
     setSelectedBillId('');
     setStatusFilter('All'); setVendorFilter(''); setSearchText('');
+    setLastCreateInfo(null);
+    fetchVendorAdvances();
   };
 
-  // ── Helpers ──────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────
   const getVendorLabel = (bill) => {
-    if (bill.vendor?.name) return `${bill.vendor.vendorCode} — ${bill.vendor.name}`;
+    if (bill.vendor?.name) return `${bill.vendor.vendorCode || ''} — ${bill.vendor.name}`;
     const found = vendors.find(v => v._id === (bill.vendor?._id || bill.vendor));
-    return found ? `${found.vendorCode} — ${found.name}` : '—';
+    return found ? `${found.vendorCode || ''} — ${found.name}` : '—';
   };
+
+  const getFullVendor = (bill) => {
+    const vendorId = bill.vendor?._id || (typeof bill.vendor === 'string' ? bill.vendor : null);
+    if (!vendorId) return bill.vendor || {};
+    return vendors.find(v => v._id === vendorId) || bill.vendor || {};
+  };
+
+  const getGst = (vendor) => vendor?.gstNo || vendor?.gstNumber || '';
 
   const statusBadge = (status) => {
-    const s = (status || 'Unpaid');
-    const map = {
-      'Paid':           { cls: 'status-paid',    label: 'Paid' },
-      'Partial':        { cls: 'status-partial', label: 'Partial' },
-      'Unpaid':         { cls: 'status-pending', label: 'Unpaid' },
-      'AdvancePayment': { cls: 'status-advance', label: 'Advance' },
-    };
-    const d = map[s] || map['Unpaid'];
-    return <span className={`status-badge ${d.cls}`}>{d.label}</span>;
+    const s = status || 'Unpaid';
+    const map = { 'Paid': 'status-paid', 'Partial': 'status-partial', 'Unpaid': 'status-pending' };
+    return <span className={`status-badge ${map[s] || 'status-pending'}`}>{s}</span>;
   };
 
-  // ── Item helpers ─────────────────────────────────────────
   const changeItems = setter => updated => setter(prev => ({ ...prev, items: updated }));
   const addItemRow  = setter => ()      => setter(prev => ({ ...prev, items: [...prev.items, emptyItem()] }));
   const removeItem  = setter => idx     => setter(prev => ({ ...prev, items: prev.items.filter((_, i) => i !== idx) }));
 
-  // ── Build payload ────────────────────────────────────────
   function buildPayload(form) {
     return {
       vendor:      form.vendor,
-      date:        form.date         || new Date().toISOString(),
-      invoiceDate: form.invoiceDate  || new Date().toISOString(),
+      date:        form.date        || new Date().toISOString(),
+      invoiceDate: form.invoiceDate || new Date().toISOString(),
       subject:     form.invoiceNo,
       notes:       form.notes || '',
       products:    buildProducts(form.items),
     };
   }
 
-  // ── Convert saved bill → form ────────────────────────────
   function billToForm(b) {
     const prods = Array.isArray(b.products) ? b.products : [];
     const items = prods.length > 0
       ? prods.map(p => {
-          const qty       = p.quantity ?? 1;
-          const rate      = p.rate ?? 0;
+          const qty       = p.quantity   ?? 1;
+          const rate      = p.rate       ?? 0;
           const gstPct    = p.gstPercent ?? 0;
           const amount    = parseFloat((qty * rate).toFixed(2));
           const gstAmount = parseFloat(((amount * gstPct) / 100).toFixed(2));
@@ -330,24 +512,24 @@ function PurchaseBillPage({ onLogout }) {
             gstPercent:  String(gstPct),
             amount:      amount || '',
             gstAmount:   amount ? gstAmount : '',
-            netTotal:    amount ? netTotal : '',
+            netTotal:    amount ? netTotal  : '',
           };
         })
       : [emptyItem()];
     return {
-      vendor:      b.vendor?._id || b.vendor || '',
+      vendor:      b.vendor?._id || (typeof b.vendor === 'string' ? b.vendor : '') || '',
       invoiceNo:   b.subject     || '',
-      date:        b.date        ? b.date.split('T')[0] : new Date().toISOString().split('T')[0],
+      date:        b.date        ? b.date.split('T')[0]        : new Date().toISOString().split('T')[0],
       invoiceDate: b.invoiceDate ? b.invoiceDate.split('T')[0] : new Date().toISOString().split('T')[0],
       notes:       b.notes       || '',
       items,
     };
   }
 
-  // ── Dropdown options ─────────────────────────────────────
+  // ── Dropdown options ──────────────────────────────────
   const vendorOptions = vendors.map(v => ({
     value: v._id,
-    label: `${v.vendorCode} — ${v.name}${v.phone ? ` (${v.phone})` : ''}`,
+    label: `${v.vendorCode || ''} — ${v.name}${v.phone ? ` (${v.phone})` : ''}`,
   }));
 
   const billOptions = bills.map(b => ({
@@ -357,10 +539,10 @@ function PurchaseBillPage({ onLogout }) {
 
   const vendorFilterOptions = [
     { value: '', label: 'All Vendors' },
-    ...vendors.map(v => ({ value: v._id, label: `${v.vendorCode} — ${v.name}` })),
+    ...vendors.map(v => ({ value: v._id, label: `${v.vendorCode || ''} — ${v.name}` })),
   ];
 
-  // ── Filtered bills ───────────────────────────────────────
+  // ── Filtered bills ────────────────────────────────────
   const filteredBills = useMemo(() => {
     let list = bills;
     if (statusFilter !== 'All')
@@ -370,9 +552,9 @@ function PurchaseBillPage({ onLogout }) {
     if (searchText.trim()) {
       const q = searchText.toLowerCase();
       list = list.filter(b =>
-        (b.sno        || '').toLowerCase().includes(q) ||
-        (b.subject    || '').toLowerCase().includes(q) ||
-        (b.notes      || '').toLowerCase().includes(q) ||
+        (b.sno     || '').toLowerCase().includes(q) ||
+        (b.subject || '').toLowerCase().includes(q) ||
+        (b.notes   || '').toLowerCase().includes(q) ||
         getVendorLabel(b).toLowerCase().includes(q)
       );
     }
@@ -384,27 +566,42 @@ function PurchaseBillPage({ onLogout }) {
   const countPaid    = bills.filter(b => b.paymentStatus === 'Paid').length;
   const countPartial = bills.filter(b => b.paymentStatus === 'Partial').length;
   const countUnpaid  = bills.filter(b => !b.paymentStatus || b.paymentStatus === 'Unpaid').length;
-  const countAdvance = bills.filter(b => b.paymentStatus === 'AdvancePayment').length;
 
-  // ── Excel Download ───────────────────────────────────────
+  // ── Derived: selected vendor's advance vouchers ───────
+  const selectedVendorAdvances     = addForm.vendor ? (vendorAdvanceMap[addForm.vendor] || []) : [];
+  const selectedVendorAdvanceTotal = selectedVendorAdvances.reduce((s, v) => s + v.remainingAmount, 0);
+  const addFormTotals              = calcTotals(addForm.items);
+
+  // ✅ NEW: Helper to calculate advance applied for display
+  const getAdvanceApplied = (bill) => {
+    const grandTotal = Number(bill.grandTotal || 0);
+    const paid       = Number(bill.cumulativePaidAmount || 0);
+    // Advance = paid amount (assuming backend auto-applied advance during creation)
+    return Math.min(paid, grandTotal);
+  };
+
+  // ── Excel Download ────────────────────────────────────
   const downloadExcel = (billsToExport, filename = 'Purchase_Bills') => {
     if (billsToExport.length === 0) { showToast('No bills to export', 'error'); return; }
 
     const mainData = billsToExport.map((b, idx) => {
-      const balance = (b.grandTotal || 0) - (b.paidAmount || 0);
+      const paid         = b.cumulativePaidAmount || 0;
+      const balance      = (b.grandTotal || 0) - paid;
+      const advApplied   = getAdvanceApplied(b);
       return {
         'S.No':            idx + 1,
-        'Purchase SNO':    b.sno || '—',
+        'Purchase SNO':    b.sno     || '—',
         'Subject':         b.subject || '—',
         'Vendor Code':     b.vendor?.vendorCode || '—',
-        'Vendor Name':     b.vendor?.name || '—',
-        'Date':            b.date ? new Date(b.date).toLocaleDateString('en-IN') : '—',
+        'Vendor Name':     b.vendor?.name       || '—',
+        'Date':            b.date        ? new Date(b.date).toLocaleDateString('en-IN')        : '—',
         'Invoice Date':    b.invoiceDate ? new Date(b.invoiceDate).toLocaleDateString('en-IN') : '—',
         'Notes':           b.notes || '—',
         'Sub Total (₹)':   Number(b.totalAmount || 0).toFixed(2),
         'Total GST (₹)':   Number(b.totalGST    || 0).toFixed(2),
         'Grand Total (₹)': Number(b.grandTotal   || 0).toFixed(2),
-        'Paid Amount (₹)': Number(b.paidAmount   || 0).toFixed(2),
+        'Advance Applied (₹)': Number(advApplied).toFixed(2),
+        'Paid Amount (₹)': Number(paid).toFixed(2),
         'Balance (₹)':     Number(balance).toFixed(2),
         'Status':          (b.paymentStatus || 'Unpaid').toUpperCase(),
         'Created Date':    b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-IN') : '—',
@@ -416,23 +613,23 @@ function PurchaseBillPage({ onLogout }) {
       if (Array.isArray(b.products) && b.products.length > 0) {
         b.products.forEach(p => {
           productsData.push({
-            'Purchase SNO':  b.sno || '—',
+            'Purchase SNO':  b.sno     || '—',
             'Subject':       b.subject || '—',
             'Vendor':        b.vendor?.name || '—',
-            'Serial No':     p.serialNo || '—',
+            'Serial No':     p.serialNo    || '—',
             'Description':   p.description || '—',
-            'Quantity':      p.quantity || 0,
-            'Rate (₹)':      Number(p.rate || 0).toFixed(2),
-            'GST %':         p.gstPercent || 0,
-            'Amount (₹)':    Number(p.amount || 0).toFixed(2),
-            'GST Amt (₹)':   Number(p.gstAmount || 0).toFixed(2),
-            'Net Total (₹)': Number(p.netTotal || 0).toFixed(2),
+            'Quantity':      p.quantity    || 0,
+            'Rate (₹)':      Number(p.rate       || 0).toFixed(2),
+            'GST %':         p.gstPercent  || 0,
+            'Amount (₹)':    Number(p.amount      || 0).toFixed(2),
+            'GST Amt (₹)':   Number(p.gstAmount   || 0).toFixed(2),
+            'Net Total (₹)': Number(p.netTotal    || 0).toFixed(2),
           });
         });
       }
     });
 
-    const wb = XLSX.utils.book_new();
+    const wb  = XLSX.utils.book_new();
     const ws1 = XLSX.utils.json_to_sheet(mainData);
     XLSX.utils.book_append_sheet(wb, ws1, 'Purchase Bills');
     if (productsData.length > 0) {
@@ -440,8 +637,8 @@ function PurchaseBillPage({ onLogout }) {
       XLSX.utils.book_append_sheet(wb, ws2, 'Products Details');
     }
 
-    const totalGrand = billsToExport.reduce((s, b) => s + (b.grandTotal  || 0), 0);
-    const totalPaid  = billsToExport.reduce((s, b) => s + (b.paidAmount  || 0), 0);
+    const totalGrand = billsToExport.reduce((s, b) => s + (b.grandTotal            || 0), 0);
+    const totalPaid  = billsToExport.reduce((s, b) => s + (b.cumulativePaidAmount  || 0), 0);
     const summaryData = [
       { 'Description': 'Total Bills',            'Value': billsToExport.length },
       { 'Description': 'Paid Bills',             'Value': billsToExport.filter(b => b.paymentStatus === 'Paid').length },
@@ -460,18 +657,13 @@ function PurchaseBillPage({ onLogout }) {
     showToast(`Excel downloaded: ${billsToExport.length} bill(s)`, 'success');
   };
 
-  // ══════════════════════════════════════════════════════════
-  // PRINT — DesignArt Purchase Bill Template
-  // ══════════════════════════════════════════════════════════
+  // ── PRINT ─────────────────────────────────────────────
   const handlePrint = (bill) => {
-    const vendorObj  = (typeof bill.vendor === 'object' && bill.vendor)
-      ? bill.vendor
-      : vendors.find(v => v._id === bill.vendor) || {};
-
+    const vendorObj  = getFullVendor(bill);
     const vendorCode = vendorObj.vendorCode || '';
     const vendorName = vendorObj.name       || '';
     const vendorAddr = vendorObj.address    || '';
-    const vendorGST  = vendorObj.gstNumber  || '';
+    const vendorGST  = getGst(vendorObj);
 
     const sno   = bill.sno || 'PUR—';
     const prods = Array.isArray(bill.products) ? bill.products : [];
@@ -491,12 +683,12 @@ function PurchaseBillPage({ onLogout }) {
     const fmt = v => Number(v || 0).toLocaleString('en-IN');
 
     const itemRows = prods.map((p, i) => {
-      const qty      = Number(p.quantity  || 0);
-      const rate     = Number(p.rate      || 0);
-      const gstPct   = Number(p.gstPercent|| 0);
-      const amount   = Number(p.amount    || parseFloat((qty * rate).toFixed(2)));
-      const gstAmt   = Number(p.gstAmount || parseFloat(((amount * gstPct) / 100).toFixed(2)));
-      const total    = Number(p.netTotal  || parseFloat((amount + gstAmt).toFixed(2)));
+      const qty    = Number(p.quantity   || 0);
+      const rate   = Number(p.rate       || 0);
+      const gstPct = Number(p.gstPercent || 0);
+      const amount = Number(p.amount    ?? parseFloat((qty * rate).toFixed(2)));
+      const gstAmt = Number(p.gstAmount ?? parseFloat(((amount * gstPct) / 100).toFixed(2)));
+      const total  = Number(p.netTotal  ?? parseFloat((amount + gstAmt).toFixed(2)));
       return `
         <tr>
           <td class="tc">${p.serialNo || i + 1}</td>
@@ -512,9 +704,12 @@ function PurchaseBillPage({ onLogout }) {
 
     const grandTotal = Number(bill.grandTotal  || 0);
     const totalGST   = Number(bill.totalGST    || 0);
-    const totalAmt   = Number(bill.totalAmount || 0);
-    const paidAmt    = Number(bill.paidAmount  || 0);
+    const totalAmt   = Number(bill.totalAmount  || 0);
+    const paidAmt    = Number(bill.cumulativePaidAmount || 0);
     const balance    = Math.max(0, grandTotal - paidAmt);
+
+    // ✅ NEW: Display advance applied
+    const advanceApplied = getAdvanceApplied(bill);
 
     const w = window.open('', '_blank', 'width=1050,height=780');
     w.document.write(`<!DOCTYPE html>
@@ -527,50 +722,31 @@ function PurchaseBillPage({ onLogout }) {
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Open Sans',sans-serif;font-size:13px;color:#1a1a1a;background:#fff;}
   .page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;}
-
-  .hdr{
-    background:#1c1c1c;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:18px 32px;
-    gap:24px;
-  }
-  .hdr-brand{display:flex;align-items:center;gap:0;flex-shrink:0;}
+  .hdr{background:#1c1c1c;display:flex;justify-content:space-between;align-items:center;padding:18px 32px;gap:24px;}
   .logo-icon{width:50px;height:44px;margin-right:10px;flex-shrink:0;}
-  .logo-text{font-family:'Montserrat',sans-serif;font-size:26px;font-weight:900;color:#ffffff;letter-spacing:-1px;line-height:1;white-space:nowrap;}
-  .logo-text .pipe{font-weight:300;color:rgba(255,255,255,0.45);margin:0 1px;}
   .hdr-div{width:1px;height:50px;background:rgba(255,255,255,0.22);margin:0 24px;flex-shrink:0;}
-  .hdr-addr{font-size:10.5px;line-height:1.85;color:#ffffff;font-family:'Open Sans',sans-serif;font-weight:400;}
+  .hdr-addr{font-size:10.5px;line-height:1.85;color:#ffffff;}
   .hdr-inv-title{font-family:'Montserrat',sans-serif;font-size:24px;font-weight:900;letter-spacing:4px;color:#ffffff;text-align:right;white-space:nowrap;flex-shrink:0;}
-
   .body{padding:26px 32px 0;}
   .meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;}
   .cid-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
   .cid-lbl{font-size:12px;font-weight:700;color:#333;}
   .cid-box{border:1px solid #bbb;border-radius:4px;padding:5px 12px;font-size:12px;font-weight:700;min-width:155px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-  .cid-arr{font-size:10px;color:#888;}
   .v-name{font-size:13.5px;font-weight:700;color:#111;margin-bottom:3px;}
   .v-addr{font-size:11.5px;color:#444;line-height:1.7;max-width:295px;}
-  .v-gst {font-size:11.5px;color:#222;font-weight:700;margin-top:5px;}
+  .v-gst{font-size:11.5px;color:#222;font-weight:700;margin-top:5px;}
   .date-col{text-align:right;}
   .date-row{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;}
   .date-lbl{font-size:12px;font-weight:700;}
   .date-box{border:1px solid #bbb;border-radius:4px;padding:5px 14px;font-size:12px;font-weight:700;min-width:160px;text-align:center;}
   .inv-no-row{font-size:12px;color:#333;margin-top:4px;}
-  .inv-no-row strong{font-weight:700;}
   .subj-row{margin-bottom:6px;font-size:13px;font-weight:600;}
-  .subj-row span{font-weight:400;color:#444;}
-  .inv-date-row{font-size:12px;color:#555;margin-bottom:16px;}
-  .inv-date-row strong{font-weight:700;}
-
   table{width:100%;border-collapse:collapse;}
   thead tr{background:#1c1c1c;color:#fff;}
   thead th{padding:10px 11px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.3px;}
   tbody tr{border-bottom:1px solid #e8e8e8;}
   tbody tr:nth-child(even){background:#fafafa;}
   tbody td{padding:10px 11px;font-size:12px;}
-
   .totals-wrap{display:flex;justify-content:flex-end;margin-top:20px;}
   .tot-tbl{width:320px;border:1px solid #ddd;border-radius:6px;overflow:hidden;border-collapse:collapse;}
   .tot-tbl td{padding:9px 14px;font-size:12.5px;border-bottom:1px solid #eee;}
@@ -578,29 +754,22 @@ function PurchaseBillPage({ onLogout }) {
   .tot-lbl{color:#555;font-weight:600;}
   .tot-val{text-align:right;font-weight:700;}
   .row-grand td{background:#1c1c1c;color:#fff;font-weight:800;font-size:13px;}
-  .row-bal  td{color:#c93360;font-weight:700;}
+  .row-bal td{color:#c93360;font-weight:700;}
   .row-paid .tot-val{color:#036b4e;}
-  .row-gst  td{background:#fffbe8;}
+  .row-adv td{background:#f3e8ff;}
+  .row-adv .tot-lbl{color:#7c3aed;}
+  .row-adv .tot-val{color:#7c3aed;}
+  .row-gst td{background:#fffbe8;}
   .row-gst .tot-lbl{color:#7a5000;}
   .row-gst .tot-val{color:#7a5000;}
-
   .notes{margin-top:22px;padding:12px 16px;background:#f8f8f8;border-left:3px solid #1c1c1c;font-size:12px;color:#444;line-height:1.65;}
   .footer{margin-top:40px;padding:14px 32px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#999;}
-
-  .tc{text-align:center;}
-  .tr{text-align:right;}
-  .bold{font-weight:700;}
-
-  @media print{
-    body{padding:0;}
-    .page{width:100%;margin:0;}
-    @page{margin:8mm;}
-  }
+  .tc{text-align:center;} .tr{text-align:right;} .bold{font-weight:700;}
+  @media print{body{padding:0;}.page{width:100%;margin:0;}@page{margin:8mm;}}
 </style>
 </head>
 <body>
 <div class="page">
-
   <div class="hdr">
     <div style="display:flex;align-items:center;flex:1;min-width:0;">
       <img src="${window.location.origin}${logo}" alt="logo" class="logo-icon"/>
@@ -613,16 +782,12 @@ function PurchaseBillPage({ onLogout }) {
     </div>
     <div class="hdr-inv-title">PURCHASE BILL</div>
   </div>
-
   <div class="body">
     <div class="meta">
       <div class="vendor-col">
         <div class="cid-row">
           <span class="cid-lbl">Vendor ID :</span>
-          <div class="cid-box">
-            <span>${vendorCode || 'N/A'}</span>
-            <span class="cid-arr">&#9660;</span>
-          </div>
+          <div class="cid-box"><span>${vendorCode || 'N/A'}</span><span class="cid-arr">&#9660;</span></div>
         </div>
         ${vendorName ? `<div class="v-name">${vendorName}</div>` : ''}
         ${vendorAddr ? `<div class="v-addr">${vendorAddr.replace(/\n/g, '<br/>')}</div>` : ''}
@@ -640,9 +805,7 @@ function PurchaseBillPage({ onLogout }) {
         <div class="inv-no-row" style="margin-top:8px;"><strong>Purchase No :</strong>&nbsp;${sno}</div>
       </div>
     </div>
-
     ${bill.subject ? `<div class="subj-row"><strong>Subject :</strong>&nbsp;<span>${bill.subject}</span></div>` : ''}
-
     <table>
       <thead>
         <tr>
@@ -660,55 +823,29 @@ function PurchaseBillPage({ onLogout }) {
         ${itemRows || `<tr><td colspan="8" style="text-align:center;padding:20px;color:#aaa">No items</td></tr>`}
       </tbody>
     </table>
-
     <div class="totals-wrap">
       <table class="tot-tbl">
-        <tr>
-          <td class="tot-lbl">Sub Total (before GST)</td>
-          <td class="tot-val">&#8377;${fmt(totalAmt)}</td>
-        </tr>
-        ${totalGST > 0 ? `
-        <tr class="row-gst">
-          <td class="tot-lbl">Total GST</td>
-          <td class="tot-val">&#8377;${fmt(totalGST)}</td>
-        </tr>` : ''}
-        ${paidAmt > 0 ? `
-        <tr class="row-paid">
-          <td class="tot-lbl">Paid Amount</td>
-          <td class="tot-val">&#8377;${fmt(paidAmt)}</td>
-        </tr>` : ''}
-        ${balance > 0 ? `
-        <tr class="row-bal">
-          <td class="tot-lbl">Balance Due</td>
-          <td class="tot-val">&#8377;${fmt(balance)}</td>
-        </tr>` : ''}
-        <tr class="row-grand">
-          <td class="tot-lbl">Grand Total</td>
-          <td class="tot-val">&#8377;${fmt(grandTotal)}</td>
-        </tr>
+        <tr><td class="tot-lbl">Sub Total (before GST)</td><td class="tot-val">&#8377;${fmt(totalAmt)}</td></tr>
+        ${totalGST > 0 ? `<tr class="row-gst"><td class="tot-lbl">Total GST</td><td class="tot-val">&#8377;${fmt(totalGST)}</td></tr>` : ''}
+        <tr class="row-grand"><td class="tot-lbl">Grand Total</td><td class="tot-val">&#8377;${fmt(grandTotal)}</td></tr>
+        ${advanceApplied > 0 ? `<tr class="row-adv"><td class="tot-lbl">Advance Applied</td><td class="tot-val">&#8377;${fmt(advanceApplied)}</td></tr>` : ''}
+        ${balance > 0 ? `<tr class="row-bal"><td class="tot-lbl">Balance Due</td><td class="tot-val">&#8377;${fmt(balance)}</td></tr>` : ''}
       </table>
     </div>
-
-    ${bill.notes ? `
-    <div class="notes">
-      <strong>Notes :</strong>&nbsp;${bill.notes}
-    </div>` : ''}
+    ${bill.notes ? `<div class="notes"><strong>Notes :</strong>&nbsp;${bill.notes}</div>` : ''}
   </div>
-
   <div class="footer">
     <span>designart &nbsp;|&nbsp; 5-6, Indira Nagar, Coimbatore 641012</span>
     <span>Thank you for your business!</span>
   </div>
-
 </div>
 <script>window.onload = () => { window.focus(); window.print(); };</script>
 </body>
 </html>`);
     w.document.close();
   };
-  /* ── END handlePrint ── */
 
-  // ── ADD ──────────────────────────────────────────────────
+  // ── ADD ───────────────────────────────────────────────
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!addForm.vendor || !addForm.invoiceNo) {
@@ -720,8 +857,12 @@ function PurchaseBillPage({ onLogout }) {
     if (addForm.items.some(it => !it.description)) {
       showToast('Each item needs a description', 'error'); return;
     }
+    if (addForm.items.some(it => !it.rate || parseFloat(it.rate) <= 0)) {
+      showToast('Each item needs a valid rate', 'error'); return;
+    }
     try {
       setLoading(true);
+      setLastCreateInfo(null);
       const res  = await fetch(`${API}/purchase/add`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -729,15 +870,33 @@ function PurchaseBillPage({ onLogout }) {
       });
       const data = await res.json();
       if (res.ok) {
+        const saved = data.data;
+        const paid  = saved?.cumulativePaidAmount || 0;
+
+        if (paid > 0) {
+          setLastCreateInfo({
+            sno:                  saved.sno,
+            grandTotal:           saved.grandTotal,
+            cumulativePaidAmount: paid,
+            remainingBalance:     Math.max(0, saved.grandTotal - paid),
+            paymentStatus:        saved.paymentStatus,
+          });
+          showToast(`✅ Purchase ${saved.sno} added! ₹${paid.toLocaleString('en-IN')} advance auto-applied.`);
+        } else {
+          showToast(`✅ Purchase ${saved?.sno || ''} added!`);
+        }
+
         await fetchBills();
+        await fetchVendorAdvances(); // refresh advance map after creation
         setAddForm(emptyBill);
-        showToast(`Purchase ${data.data?.sno || ''} added!`);
-      } else showToast(data.message || 'Failed to add bill', 'error');
+      } else {
+        showToast(data.message || data.error || 'Failed to add bill', 'error');
+      }
     } catch { showToast('Error adding bill', 'error'); }
     finally { setLoading(false); }
   };
 
-  // ── UPDATE ───────────────────────────────────────────────
+  // ── UPDATE ────────────────────────────────────────────
   const handleUpdateSelect = (billId) => {
     setUpdateBillId(billId);
     const found = bills.find(b => b._id === billId);
@@ -748,33 +907,47 @@ function PurchaseBillPage({ onLogout }) {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!updateFound) { showToast('Please select a bill', 'error'); return; }
+
+    const newTotals   = calcTotals(updateForm.items);
+    const alreadyPaid = updateFound.cumulativePaidAmount || 0;
+    if (alreadyPaid > 0 && newTotals.grandTotal < alreadyPaid) {
+      showToast(
+        `Cannot reduce Grand Total to ₹${newTotals.grandTotal.toLocaleString('en-IN')} — already paid ₹${alreadyPaid.toLocaleString('en-IN')}.`,
+        'error'
+      );
+      return;
+    }
+
     try {
       setLoading(true);
-      const res1 = await fetch(`${API}/purchase/update/${updateFound._id}`, {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          date:        updateForm.date,
-          invoiceDate: updateForm.invoiceDate,
-          subject:     updateForm.invoiceNo,
-          notes:       updateForm.notes || '',
+      const [res1, res2] = await Promise.all([
+        fetch(`${API}/purchase/update/${updateFound._id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date:        updateForm.date,
+            invoiceDate: updateForm.invoiceDate,
+            subject:     updateForm.invoiceNo,
+            notes:       updateForm.notes || '',
+          }),
         }),
-      });
-      const res2 = await fetch(`${API}/purchase/update-products/${updateFound._id}`, {
-        method:  'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ products: buildProducts(updateForm.items) }),
-      });
+        fetch(`${API}/purchase/update-products/${updateFound._id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ products: buildProducts(updateForm.items) }),
+        }),
+      ]);
+      const d2 = await res2.json();
       if (res1.ok && res2.ok) {
         await fetchBills();
-        showToast(`Purchase ${updateFound.sno} updated!`);
+        showToast(`📝 Purchase ${updateFound.sno} updated!`);
         setUpdateFound(null); setUpdateBillId(''); setUpdateForm(emptyBill);
-      } else showToast('Failed to update bill', 'error');
+      } else {
+        showToast(d2.message || 'Failed to update bill', 'error');
+      }
     } catch { showToast('Error updating bill', 'error'); }
     finally { setLoading(false); }
   };
 
-  // ── DELETE ───────────────────────────────────────────────
+  // ── DELETE ────────────────────────────────────────────
   const handleDeleteSelect = (billId) => {
     setDeleteBillId(billId);
     setDeleteFound(bills.find(b => b._id === billId) || null);
@@ -782,21 +955,31 @@ function PurchaseBillPage({ onLogout }) {
 
   const handleDelete = async () => {
     if (!deleteFound) { showToast('Please select a bill', 'error'); return; }
+    if ((deleteFound.cumulativePaidAmount || 0) > 0) {
+      showToast(
+        `Cannot delete — ₹${deleteFound.cumulativePaidAmount.toLocaleString('en-IN')} already paid on this bill.`,
+        'error'
+      );
+      return;
+    }
     try {
       setLoading(true);
-      const res = await fetch(`${API}/purchase/delete/${deleteFound._id}`, { method: 'DELETE' });
+      const res  = await fetch(`${API}/purchase/delete/${deleteFound._id}`, { method: 'DELETE' });
+      const data = await res.json();
       if (res.ok) {
         await fetchBills();
-        showToast(`Purchase ${deleteFound.sno} deleted!`, 'info');
+        showToast(`🗑️ Purchase ${deleteFound.sno} deleted!`, 'info');
         setDeleteFound(null); setDeleteBillId('');
-      } else showToast('Failed to delete bill', 'error');
+      } else {
+        showToast(data.message || data.error || 'Failed to delete bill', 'error');
+      }
     } catch { showToast('Error deleting bill', 'error'); }
     finally { setLoading(false); }
   };
 
   const selectedBillObj = bills.find(b => b._id === selectedBillId);
 
-  // ── RENDER ───────────────────────────────────────────────
+  // ── RENDER ────────────────────────────────────────────
   return (
     <div className="entity-wrapper">
       <Navbar onLogout={onLogout} />
@@ -810,12 +993,43 @@ function PurchaseBillPage({ onLogout }) {
           </span>
         </div>
 
-        <div className="actions-row">
-          <button className="action-btn btn-add"    onClick={() => togglePanel(PANELS.ADD)}>➕ Add Purchase Bill</button>
-          <button className="action-btn btn-update" onClick={() => togglePanel(PANELS.UPDATE)}>✏️ Update Purchase Bill</button>
-          <button className="action-btn btn-delete" onClick={() => togglePanel(PANELS.DELETE)}>🗑️ Delete Purchase Bill</button>
-          <button className="action-btn btn-getall" onClick={() => togglePanel(PANELS.GETALL)}>📋 All Purchase Bills</button>
-        </div>
+        <div className="action-cards-grid">
+  <div
+    className={`action-card action-card-add ${activePanel === PANELS.ADD ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.ADD)}
+  >
+    <div className="action-card-icon">➕</div>
+    <div className="action-card-title">Add Purchase Bill</div>
+    <div className="action-card-desc">Create a new purchase bill</div>
+  </div>
+
+  <div
+    className={`action-card action-card-update ${activePanel === PANELS.UPDATE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.UPDATE)}
+  >
+    <div className="action-card-icon">✏️</div>
+    <div className="action-card-title">Update Purchase Bill</div>
+    <div className="action-card-desc">Edit existing bill details</div>
+  </div>
+
+  <div
+    className={`action-card action-card-getall ${activePanel === PANELS.GETALL ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.GETALL)}
+  >
+    <div className="action-card-icon">📋</div>
+    <div className="action-card-title">All Purchase Bills</div>
+    <div className="action-card-desc">View all purchase bills</div>
+  </div>
+
+   <div
+    className={`action-card action-card-delete ${activePanel === PANELS.DELETE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.DELETE)}
+  >
+    <div className="action-card-icon">🗑️</div>
+    <div className="action-card-title">Delete Purchase Bill</div>
+    <div className="action-card-desc">Remove a purchase bill record</div>
+  </div>
+</div>
 
         {loading && <div className="loading-bar"><div className="loading-inner" /></div>}
 
@@ -823,8 +1037,62 @@ function PurchaseBillPage({ onLogout }) {
         {activePanel === PANELS.ADD && (
           <div className="panel-section" key="add">
             <div className="panel-title">➕ Add New Purchase Bill</div>
+
+            {/* Advance auto-apply result banner */}
+            {lastCreateInfo && (
+              <div className="autofill-banner full-width" style={{ background: '#f3e8ff', borderColor: '#ddd6fe', marginBottom: 16 }}>
+                <span className="autofill-icon">💰</span>
+                <div>
+                  <div>
+                    Purchase <strong>{lastCreateInfo.sno}</strong> created.
+                    Advance of <strong>₹{Number(lastCreateInfo.cumulativePaidAmount).toLocaleString('en-IN')}</strong> was
+                    automatically applied. Status: <strong>{lastCreateInfo.paymentStatus}</strong>.
+                  </div>
+                  {lastCreateInfo.remainingBalance > 0 ? (
+                    <div style={{ marginTop: 6, fontWeight: 700, color: '#c93360' }}>
+                      Remaining balance: ₹{Number(lastCreateInfo.remainingBalance).toLocaleString('en-IN')}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 6, fontWeight: 700, color: '#036b4e' }}>
+                      ✓ Bill fully covered by advance!
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Info banner */}
+            <div className="autofill-banner full-width" style={{ background: '#eff6ff', borderColor: '#bfdbfe', marginBottom: 16 }}>
+              <span className="autofill-icon">💡</span>
+              <span style={{ color: '#1e40af', fontSize: 13 }}>
+                If this vendor has any <strong>advance vouchers</strong> with remaining balance,
+                the system will automatically deduct them from this bill upon creation.
+              </span>
+            </div>
+
             <form onSubmit={handleAdd}>
               <BillHeaderFields form={addForm} setForm={setAddForm} vendorOpts={vendorOptions} />
+
+              {/* ✅ Advance preview — shows when vendor is selected and has advance */}
+              {selectedVendorAdvanceTotal > 0 && (
+                <AdvancePreviewPanel
+                  vendorId={addForm.vendor}
+                  grandTotal={addFormTotals.grandTotal}
+                  advanceVouchers={selectedVendorAdvances}
+                />
+              )}
+
+              {/* Show "no advance" message when vendor selected but has no advance */}
+              {addForm.vendor && selectedVendorAdvanceTotal === 0 && (
+                <div style={{
+                  marginBottom: 16, padding: '10px 14px',
+                  background: '#f8faff', borderRadius: 8,
+                  border: '1px solid #dde5f8', fontSize: 13, color: '#888',
+                }}>
+                  ℹ️ This vendor has no pending advance vouchers.
+                </div>
+              )}
+
               <div className="items-section-label">Purchase Items (GST per item)</div>
               <ItemsTable
                 items={addForm.items}
@@ -833,24 +1101,27 @@ function PurchaseBillPage({ onLogout }) {
                 onRemove={removeItem(setAddForm)}
               />
               <TotalsSummary items={addForm.items} />
+
               <div className="vendor-id-preview" style={{ marginTop: 12 }}>
                 🪪 Auto SNO: <strong>PUR**** (auto-generated)</strong>
               </div>
-              {/* Print Preview button — visible when items have data */}
+
               <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
-                <button type="submit" className="submit-btn" disabled={loading}>➕ Add Bill</button>
-                {calcTotals(addForm.items).grandTotal > 0 && (
+                <button type="submit" className="submit-btn" disabled={loading}>
+                  {loading ? '⏳ Adding...' : '➕ Add Bill'}
+                </button>
+                {addFormTotals.grandTotal > 0 && (
                   <button type="button" className="submit-btn invoice-print-btn"
                     onClick={() => {
                       const totals = calcTotals(addForm.items);
                       handlePrint({
-                        sno:         'PREVIEW',
-                        vendor:      vendors.find(v => v._id === addForm.vendor),
-                        date:        addForm.date,
-                        invoiceDate: addForm.invoiceDate,
-                        subject:     addForm.invoiceNo,
-                        notes:       addForm.notes,
-                        products:    addForm.items.map((it, i) => ({
+                        sno:                  'PREVIEW',
+                        vendor:               vendors.find(v => v._id === addForm.vendor),
+                        date:                 addForm.date,
+                        invoiceDate:          addForm.invoiceDate,
+                        subject:              addForm.invoiceNo,
+                        notes:                addForm.notes,
+                        products:             addForm.items.map((it, i) => ({
                           serialNo:    i + 1,
                           description: it.description,
                           quantity:    parseFloat(it.qty)        || 0,
@@ -860,10 +1131,10 @@ function PurchaseBillPage({ onLogout }) {
                           gstAmount:   parseFloat(it.gstAmount)  || 0,
                           netTotal:    parseFloat(it.netTotal)   || 0,
                         })),
-                        totalAmount: totals.totalAmount,
-                        totalGST:    totals.totalGST,
-                        grandTotal:  totals.grandTotal,
-                        paidAmount:  0,
+                        totalAmount:          totals.totalAmount,
+                        totalGST:             totals.totalGST,
+                        grandTotal:           totals.grandTotal,
+                        cumulativePaidAmount: 0,
                       });
                     }}>
                     🖨️ Print Preview
@@ -878,6 +1149,14 @@ function PurchaseBillPage({ onLogout }) {
         {activePanel === PANELS.UPDATE && (
           <div className="panel-section" key="update">
             <div className="panel-title">✏️ Update Purchase Bill</div>
+            <div className="autofill-banner full-width" style={{ background: '#fff7ed', borderColor: '#fed7aa', marginBottom: 16 }}>
+              <span className="autofill-icon">⚠️</span>
+              <span style={{ color: '#92400e', fontSize: 13 }}>
+                Vendor cannot be changed after creation.
+                Updates apply to <strong>date, subject, notes</strong> and <strong>products</strong> only.<br/>
+                <strong>Note:</strong> New Grand Total cannot be less than already paid amount.
+              </span>
+            </div>
             <div className="form-field" style={{ marginBottom: 20 }}>
               <label className="field-label">Select Purchase Bill *</label>
               <SearchableDropdown
@@ -892,6 +1171,11 @@ function PurchaseBillPage({ onLogout }) {
                 <div className="update-found-badge">
                   <span className="update-found-id">{updateFound.sno}</span>
                   <span className="update-found-name">{getVendorLabel(updateFound)}</span>
+                  {(updateFound.cumulativePaidAmount || 0) > 0 && (
+                    <span style={{ fontSize: 12, background: '#f3e8ff', color: '#7c3aed', padding: '2px 8px', borderRadius: 6, marginLeft: 8, fontWeight: 700, border: '1px solid #ddd6fe' }}>
+                      💰 Adv − ₹{updateFound.cumulativePaidAmount.toLocaleString('en-IN')}
+                    </span>
+                  )}
                 </div>
                 <form onSubmit={handleUpdate}>
                   <BillHeaderFields form={updateForm} setForm={setUpdateForm} vendorOpts={vendorOptions} />
@@ -903,13 +1187,10 @@ function PurchaseBillPage({ onLogout }) {
                     onRemove={removeItem(setUpdateForm)}
                   />
                   <TotalsSummary items={updateForm.items} />
-                  <div className="bill-update-note" style={{ marginTop: 12, fontSize: 12, color: '#8898b0', background: '#f8faff', padding: '8px 14px', borderRadius: 8, border: '1px solid #e8eeff' }}>
-                    ℹ️ Note: Vendor cannot be changed after creation. Updates apply to date, subject, notes and products only.
-                  </div>
                   <div style={{ display: 'flex', gap: 12, marginTop: 20, flexWrap: 'wrap' }}>
                     <button type="submit" className="submit-btn" disabled={loading}
                       style={{ background: 'linear-gradient(135deg,#ffe08a,#ffb84a)', color: '#6b4200', boxShadow: '0 5px 18px rgba(255,184,74,0.30)' }}>
-                      ✏️ Update Bill
+                      {loading ? '⏳ Updating...' : '✏️ Update Bill'}
                     </button>
                     {calcTotals(updateForm.items).grandTotal > 0 && (
                       <button type="button" className="submit-btn invoice-print-btn"
@@ -950,6 +1231,12 @@ function PurchaseBillPage({ onLogout }) {
         {activePanel === PANELS.DELETE && (
           <div className="panel-section" key="delete">
             <div className="panel-title">🗑️ Delete Purchase Bill</div>
+            <div className="autofill-banner full-width" style={{ background: '#fff7ed', borderColor: '#fed7aa', marginBottom: 16 }}>
+              <span className="autofill-icon">⚠️</span>
+              <span style={{ color: '#92400e', fontSize: 13 }}>
+                <strong>Bills with existing payments cannot be deleted.</strong> Only bills with zero paid amount can be deleted.
+              </span>
+            </div>
             <div className="form-field" style={{ marginBottom: 20 }}>
               <label className="field-label">Select Purchase Bill *</label>
               <SearchableDropdown
@@ -965,25 +1252,41 @@ function PurchaseBillPage({ onLogout }) {
                   ['Purchase SNO',  deleteFound.sno],
                   ['Vendor',        getVendorLabel(deleteFound)],
                   ['Subject',       deleteFound.subject || '—'],
-                  ['Notes',         deleteFound.notes || '—'],
-                  ['Date',          deleteFound.date ? new Date(deleteFound.date).toLocaleDateString('en-IN') : '—'],
+                  ['Notes',         deleteFound.notes   || '—'],
+                  ['Date',          deleteFound.date        ? new Date(deleteFound.date).toLocaleDateString('en-IN')        : '—'],
                   ['Invoice Date',  deleteFound.invoiceDate ? new Date(deleteFound.invoiceDate).toLocaleDateString('en-IN') : '—'],
                   ['Sub Total',     `₹${(deleteFound.totalAmount || 0).toLocaleString('en-IN')}`],
                   ['Total GST',     `₹${(deleteFound.totalGST    || 0).toLocaleString('en-IN')}`],
                   ['Grand Total',   `₹${(deleteFound.grandTotal  || 0).toLocaleString('en-IN')}`],
-                  ['Paid Amount',   `₹${(deleteFound.paidAmount  || 0).toLocaleString('en-IN')}`],
-                  ['Balance',       `₹${((deleteFound.grandTotal || 0) - (deleteFound.paidAmount || 0)).toLocaleString('en-IN')}`],
+                  ['Advance Applied', `₹${getAdvanceApplied(deleteFound).toLocaleString('en-IN')}`],
+                  ['Paid Amount',   `₹${(deleteFound.cumulativePaidAmount || 0).toLocaleString('en-IN')}`],
+                  ['Balance',       `₹${Math.max(0, (deleteFound.grandTotal || 0) - (deleteFound.cumulativePaidAmount || 0)).toLocaleString('en-IN')}`],
                   ['Status',        statusBadge(deleteFound.paymentStatus)],
                 ].map(([k, v]) => (
-                  <div className="detail-row" key={k}>
+                  <div className="detail-row" key={k}
+                    style={k === 'Advance Applied' && getAdvanceApplied(deleteFound) > 0 ? { background: '#f3e8ff', borderColor: '#ddd6fe' } : {}}>
                     <span className="detail-key">{k}</span>
-                    <span className="detail-val">{v}</span>
+                    <span className="detail-val"
+                      style={k === 'Advance Applied' ? { color: '#7c3aed', fontWeight: 800 } : {}}>
+                      {v}
+                    </span>
                   </div>
                 ))}
-                <div className="vendor-delete-warn">⚠️ Deleting this purchase bill is permanent and cannot be undone.</div>
-                <button className="delete-confirm-btn" style={{ marginTop: 12 }} onClick={handleDelete} disabled={loading}>
-                  🗑️ Confirm Delete
-                </button>
+
+                {(deleteFound.cumulativePaidAmount || 0) > 0 ? (
+                  <div className="vendor-delete-warn" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#991b1b' }}>
+                    ❌ This bill has <strong>₹{deleteFound.cumulativePaidAmount.toLocaleString('en-IN')}</strong> already paid. Cannot delete.
+                  </div>
+                ) : (
+                  <>
+                    <div className="vendor-delete-warn">
+                      ⚠️ Deleting this purchase bill is permanent and cannot be undone.
+                    </div>
+                    <button className="delete-confirm-btn" style={{ marginTop: 12 }} onClick={handleDelete} disabled={loading}>
+                      {loading ? '⏳ Deleting...' : '🗑️ Confirm Delete'}
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -994,31 +1297,17 @@ function PurchaseBillPage({ onLogout }) {
           <div className="panel-section" key="getall">
             <div className="panel-title">📋 All Purchase Bills</div>
 
-            {/* Summary stat cards */}
             <div className="bill-stat-cards">
-              <div className="bill-stat-card bsc-total">
-                <span>Total Bills</span>
-                <strong>{countAll}</strong>
-              </div>
-              <div className="bill-stat-card bsc-net">
-                <span>Total Grand</span>
-                <strong>₹{bills.reduce((s, b) => s + (b.grandTotal || 0), 0).toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="bill-stat-card bsc-paid">
-                <span>Total Paid</span>
-                <strong>₹{bills.reduce((s, b) => s + (b.paidAmount || 0), 0).toLocaleString('en-IN')}</strong>
-              </div>
-              <div className="bill-stat-card bsc-due">
-                <span>Total Due</span>
-                <strong>₹{bills.reduce((s, b) => s + ((b.grandTotal || 0) - (b.paidAmount || 0)), 0).toLocaleString('en-IN')}</strong>
-              </div>
+              <div className="bill-stat-card bsc-total"><span>Total Bills</span><strong>{countAll}</strong></div>
+              <div className="bill-stat-card bsc-net"><span>Total Grand</span><strong>₹{bills.reduce((s, b) => s + (b.grandTotal || 0), 0).toLocaleString('en-IN')}</strong></div>
+              <div className="bill-stat-card bsc-paid"><span>Total Paid</span><strong>₹{bills.reduce((s, b) => s + (b.cumulativePaidAmount || 0), 0).toLocaleString('en-IN')}</strong></div>
+              <div className="bill-stat-card bsc-due"><span>Total Due</span><strong>₹{bills.reduce((s, b) => s + Math.max(0, (b.grandTotal || 0) - (b.cumulativePaidAmount || 0)), 0).toLocaleString('en-IN')}</strong></div>
             </div>
 
             {bills.length === 0 ? (
               <div className="empty-state"><div className="empty-icon">📭</div><p>No purchase bills found.</p></div>
             ) : (
               <>
-                {/* Excel Buttons */}
                 <div className="excel-download-section">
                   <button className="excel-download-btn excel-btn-all"
                     onClick={() => downloadExcel(bills, 'All_Purchase_Bills')}
@@ -1032,7 +1321,6 @@ function PurchaseBillPage({ onLogout }) {
                   </button>
                 </div>
 
-                {/* Filters */}
                 <div className="getall-filter-bar">
                   <div className="getall-search-wrap">
                     <span className="getall-search-icon">🔍</span>
@@ -1044,11 +1332,10 @@ function PurchaseBillPage({ onLogout }) {
                   </div>
                   <div className="inv-status-filter-row" style={{ margin: 0 }}>
                     {[
-                      { label: 'All',     count: countAll,     key: 'All',           cls: 'filter-all'     },
-                      { label: 'Paid',    count: countPaid,    key: 'Paid',          cls: 'filter-paid'    },
-                      { label: 'Partial', count: countPartial, key: 'Partial',       cls: 'filter-partial' },
-                      { label: 'Unpaid',  count: countUnpaid,  key: 'Unpaid',        cls: 'filter-unpaid'  },
-                      { label: 'Advance', count: countAdvance, key: 'AdvancePayment',cls: 'filter-advance' },
+                      { label: 'All',     count: countAll,     key: 'All',     cls: 'filter-all'     },
+                      { label: 'Paid',    count: countPaid,    key: 'Paid',    cls: 'filter-paid'    },
+                      { label: 'Partial', count: countPartial, key: 'Partial', cls: 'filter-partial' },
+                      { label: 'Unpaid',  count: countUnpaid,  key: 'Unpaid',  cls: 'filter-unpaid'  },
                     ].map(tab => (
                       <button key={tab.key}
                         className={`inv-filter-tab ${tab.cls} ${statusFilter === tab.key ? 'active' : ''}`}
@@ -1059,7 +1346,6 @@ function PurchaseBillPage({ onLogout }) {
                   </div>
                 </div>
 
-                {/* Vendor filter */}
                 <div className="form-field" style={{ marginBottom: 16, maxWidth: 400 }}>
                   <label className="field-label">Filter by Vendor</label>
                   <SearchableDropdown
@@ -1078,7 +1364,7 @@ function PurchaseBillPage({ onLogout }) {
                   <div className="empty-state"><div className="empty-icon">🔍</div><p>No bills match your filter.</p></div>
                 ) : (
                   <>
-                    {/* Selected bill detail card */}
+                    {/* Selected bill detail */}
                     {selectedBillObj && (
                       <div className="bill-detail-card">
                         <div className="bill-detail-header">
@@ -1088,6 +1374,15 @@ function PurchaseBillPage({ onLogout }) {
                           </div>
                           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                             {statusBadge(selectedBillObj.paymentStatus)}
+                            {getAdvanceApplied(selectedBillObj) > 0 && (
+                              <span style={{
+                                fontSize: 12, fontWeight: 700, color: '#7c3aed',
+                                background: '#f3e8ff', border: '1px solid #ddd6fe',
+                                borderRadius: 6, padding: '2px 8px',
+                              }}>
+                                💰 Adv − ₹{Number(getAdvanceApplied(selectedBillObj)).toLocaleString('en-IN')}
+                              </span>
+                            )}
                             <button className="inv-detail-close" onClick={() => setSelectedBillId('')}>✕</button>
                           </div>
                         </div>
@@ -1096,23 +1391,33 @@ function PurchaseBillPage({ onLogout }) {
                             ['Purchase SNO', selectedBillObj.sno],
                             ['Vendor',       getVendorLabel(selectedBillObj)],
                             ['Subject',      selectedBillObj.subject || '—'],
-                            ['Notes',        selectedBillObj.notes || '—'],
-                            ['Date',         selectedBillObj.date ? new Date(selectedBillObj.date).toLocaleDateString('en-IN') : '—'],
+                            ['Notes',        selectedBillObj.notes   || '—'],
+                            ['Date',         selectedBillObj.date        ? new Date(selectedBillObj.date).toLocaleDateString('en-IN')        : '—'],
                             ['Invoice Date', selectedBillObj.invoiceDate ? new Date(selectedBillObj.invoiceDate).toLocaleDateString('en-IN') : '—'],
                             ['Sub Total',    `₹${(selectedBillObj.totalAmount || 0).toLocaleString('en-IN')}`],
                             ['Total GST',    `₹${(selectedBillObj.totalGST    || 0).toLocaleString('en-IN')}`],
                             ['Grand Total',  `₹${(selectedBillObj.grandTotal  || 0).toLocaleString('en-IN')}`],
-                            ['Paid Amount',  `₹${(selectedBillObj.paidAmount  || 0).toLocaleString('en-IN')}`],
-                            ['Balance',      `₹${((selectedBillObj.grandTotal || 0) - (selectedBillObj.paidAmount || 0)).toLocaleString('en-IN')}`],
+                            ['Advance Applied', `₹${getAdvanceApplied(selectedBillObj).toLocaleString('en-IN')}`],
+                            ['Balance',      `₹${Math.max(0, (selectedBillObj.grandTotal || 0) - (selectedBillObj.cumulativePaidAmount || 0)).toLocaleString('en-IN')}`],
                           ].map(([k, v]) => (
-                            <div className="bill-detail-item" key={k}>
+                            <div className="bill-detail-item" key={k}
+                              style={
+                                k === 'Advance Applied' && getAdvanceApplied(selectedBillObj) > 0
+                                  ? { background: '#f3e8ff', borderColor: '#ddd6fe' } : {}
+                              }>
                               <span className="bill-detail-key">{k}</span>
-                              <span className="bill-detail-val">{v}</span>
+                              <span className="bill-detail-val"
+                                style={
+                                  k === 'Advance Applied' ? { color: '#7c3aed', fontWeight: 800 } :
+                                  k === 'Balance' && Math.max(0, (selectedBillObj.grandTotal || 0) - (selectedBillObj.cumulativePaidAmount || 0)) > 0
+                                    ? { color: '#c93360' } : {}
+                                }>
+                                {v}
+                              </span>
                             </div>
                           ))}
                         </div>
 
-                        {/* Products sub-table */}
                         {Array.isArray(selectedBillObj.products) && selectedBillObj.products.length > 0 && (
                           <div style={{ marginTop: 16 }}>
                             <div className="items-section-label" style={{ marginBottom: 8 }}>Purchase Items</div>
@@ -1142,7 +1447,7 @@ function PurchaseBillPage({ onLogout }) {
                                       </td>
                                       <td className="amt-cell">₹{Number(p.amount || 0).toLocaleString('en-IN')}</td>
                                       <td style={{ color: '#7a5000', fontWeight: 700, textAlign: 'right' }}>₹{Number(p.gstAmount || 0).toLocaleString('en-IN')}</td>
-                                      <td style={{ color: '#036b4e', fontWeight: 800, textAlign: 'right' }}>₹{Number(p.netTotal || 0).toLocaleString('en-IN')}</td>
+                                      <td style={{ color: '#036b4e', fontWeight: 800, textAlign: 'right' }}>₹{Number(p.netTotal  || 0).toLocaleString('en-IN')}</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -1151,8 +1456,7 @@ function PurchaseBillPage({ onLogout }) {
                           </div>
                         )}
 
-                        {/* Print button in detail card */}
-                        <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
                           <button className="submit-btn invoice-print-btn"
                             onClick={() => handlePrint(selectedBillObj)}>
                             🖨️ Print Purchase Bill
@@ -1174,7 +1478,7 @@ function PurchaseBillPage({ onLogout }) {
                             <th>Sub Total</th>
                             <th>Total GST</th>
                             <th>Grand Total</th>
-                            <th>Paid</th>
+                            <th>Advance Applied</th>
                             <th>Balance</th>
                             <th>Status</th>
                             <th style={{ width: 80 }}>Print</th>
@@ -1182,7 +1486,9 @@ function PurchaseBillPage({ onLogout }) {
                         </thead>
                         <tbody>
                           {filteredBills.map((b, idx) => {
-                            const balance    = (b.grandTotal || 0) - (b.paidAmount || 0);
+                            const paid       = b.cumulativePaidAmount || 0;
+                            const balance    = Math.max(0, (b.grandTotal || 0) - paid);
+                            const advApplied = getAdvanceApplied(b);
                             const isSelected = selectedBillId === b._id;
                             return (
                               <tr key={b._id}
@@ -1203,7 +1509,13 @@ function PurchaseBillPage({ onLogout }) {
                                 <td className="amt-cell" style={{ fontWeight: 800 }}>
                                   ₹{Number(b.grandTotal || 0).toLocaleString('en-IN')}
                                 </td>
-                                <td className="paid-cell">₹{Number(b.paidAmount || 0).toLocaleString('en-IN')}</td>
+                                {/* ✅ Advance Applied column */}
+                                <td style={{
+                                  textAlign: 'right', fontWeight: 700,
+                                  color: advApplied > 0 ? '#7c3aed' : '#aaa',
+                                }}>
+                                  {advApplied > 0 ? `₹${Number(advApplied).toLocaleString('en-IN')}` : '—'}
+                                </td>
                                 <td className={balance > 0 ? 'outstanding-due' : 'outstanding-zero'}>
                                   ₹{Number(balance).toLocaleString('en-IN')}
                                 </td>
@@ -1213,7 +1525,7 @@ function PurchaseBillPage({ onLogout }) {
                                     className="inv-print-btn"
                                     title="Print"
                                     onClick={() => handlePrint(b)}
-                                    style={{ width: 32, height: 32, borderRadius: 8, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e6fdf6', border: '1.5px solid #a0f0d8', color: '#036b4e', cursor: 'pointer', transition: 'all 0.2s' }}>
+                                    style={{ width: 32, height: 32, borderRadius: 8, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e6fdf6', border: '1.5px solid #a0f0d8', color: '#036b4e', cursor: 'pointer' }}>
                                     🖨️
                                   </button>
                                 </td>

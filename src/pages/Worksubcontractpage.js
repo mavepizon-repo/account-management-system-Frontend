@@ -21,17 +21,23 @@ const emptyForm = {
   endDate:      '',
   status:       'Pending',
   totalAmount:  '',
-  // paidAmount removed — payment handled via Vouchers only
+};
+
+// ── Date Format Helper (dd/mm/yy) ─────────────────────────
+const fmtDate = (dateStr) => {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '—';
+  const dd  = String(d.getDate()).padStart(2, '0');
+  const mm  = String(d.getMonth() + 1).padStart(2, '0');
+  const yy  = String(d.getFullYear()).slice(-2);
+  return `${dd}/${mm}/${yy}`;
 };
 
 // ── Form Fields ───────────────────────────────────────────
-// KEY FIXES:
-//   1. paidAmount field completely removed (payment via Vouchers)
-//   2. Work Status dropdown ENABLED for both ADD and UPDATE
 const WorkFormFields = ({ form, setForm, subs, isUpdate = false }) => (
   <div className="form-row work-form-grid">
 
-    {/* Subcontractor */}
     <div className="form-field full-width">
       <label className="field-label">
         Subcontractor *
@@ -60,35 +66,30 @@ const WorkFormFields = ({ form, setForm, subs, isUpdate = false }) => (
       )}
     </div>
 
-    {/* Project Name */}
     <div className="form-field full-width">
       <label className="field-label">Project Name *</label>
       <input className="field-input" placeholder="Project name" value={form.projectName}
         onChange={e => setForm({ ...form, projectName: e.target.value })} />
     </div>
 
-    {/* Description */}
     <div className="form-field full-width">
       <label className="field-label">Description</label>
       <textarea className="field-input" placeholder="Project description / scope of work"
         value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
     </div>
 
-    {/* Start Date */}
     <div className="form-field">
       <label className="field-label">Start Date</label>
       <input className="field-input" type="date" value={form.startDate}
         onChange={e => setForm({ ...form, startDate: e.target.value })} />
     </div>
 
-    {/* End Date */}
     <div className="form-field">
       <label className="field-label">End Date</label>
       <input className="field-input" type="date" value={form.endDate}
         onChange={e => setForm({ ...form, endDate: e.target.value })} />
     </div>
 
-    {/* Work Status — ENABLED for both ADD and UPDATE */}
     <div className="form-field">
       <label className="field-label">Work Status</label>
       <div className="dropdown-wrap">
@@ -103,15 +104,13 @@ const WorkFormFields = ({ form, setForm, subs, isUpdate = false }) => (
       </div>
     </div>
 
-    {/* Total Amount */}
-    <div className="form-field">
-      <label className="field-label">Total Amount (₹) *</label>
-      <input className="field-input" type="number" placeholder="0.00" min="0"
-        value={form.totalAmount} onChange={e => setForm({ ...form, totalAmount: e.target.value })} />
-    </div>
-
-    {/* NOTE: paidAmount field intentionally removed.
-         Payments are tracked through Vouchers only. */}
+    {!isUpdate && (
+      <div className="form-field">
+        <label className="field-label">Total Amount (₹) *</label>
+        <input className="field-input" type="number" placeholder="0.00" min="0"
+          value={form.totalAmount} onChange={e => setForm({ ...form, totalAmount: e.target.value })} />
+      </div>
+    )}
 
   </div>
 );
@@ -126,16 +125,18 @@ function WorkSubcontractPage({ onLogout }) {
   const [toast, setToast]       = useState(null);
   const [loading, setLoading]   = useState(false);
 
+  const [subAdvanceMap, setSubAdvanceMap] = useState({});
+
   const [statusFilter, setStatusFilter] = useState('All');
   const [payFilter, setPayFilter]       = useState('All');
   const [subFilter, setSubFilter]       = useState('');
 
-  const [addForm, setAddForm]             = useState(emptyForm);
-  const [updateWorkId, setUpdateWorkId]   = useState('');
-  const [updateFound, setUpdateFound]     = useState(null);
-  const [updateForm, setUpdateForm]       = useState(emptyForm);
-  const [deleteWorkId, setDeleteWorkId]   = useState('');
-  const [deleteFound, setDeleteFound]     = useState(null);
+  const [addForm, setAddForm]               = useState(emptyForm);
+  const [updateWorkId, setUpdateWorkId]     = useState('');
+  const [updateFound, setUpdateFound]       = useState(null);
+  const [updateForm, setUpdateForm]         = useState(emptyForm);
+  const [deleteWorkId, setDeleteWorkId]     = useState('');
+  const [deleteFound, setDeleteFound]       = useState(null);
   const [selectedWorkId, setSelectedWorkId] = useState('');
 
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
@@ -153,12 +154,56 @@ function WorkSubcontractPage({ onLogout }) {
       setLoading(true);
       const res  = await fetch(`${API}/workSubcontract/getall`);
       const data = await res.json();
-      setWorks(data.works || []);
+      setWorks(data.data || []);
     } catch { showToast('Failed to fetch projects', 'error'); }
     finally  { setLoading(false); }
   }, [showToast]);
 
-  useEffect(() => { fetchSubs(); fetchWorks(); }, [fetchSubs, fetchWorks]);
+  const fetchSubAdvances = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/vouchers/getall`);
+      const data = await res.json();
+      const vouchers = data.data || (Array.isArray(data) ? data : []);
+
+      const map = {};
+      vouchers.forEach(v => {
+        if (v.receiverType !== 'Subcontract') return;
+        const rem = Number(v.remainingAmount ?? 0);
+        if (rem <= 0) return;
+
+        const hasWork = v.appliedWorkSubcontracts && v.appliedWorkSubcontracts.length > 0;
+        if (hasWork) return;
+
+        const subId =
+          (v.subcontract && typeof v.subcontract === 'object' ? v.subcontract._id : null) ||
+          (typeof v.receiver === 'object' && v.receiver ? v.receiver._id : null) ||
+          (typeof v.receiver === 'string' ? v.receiver : null);
+
+        if (!subId) return;
+
+        if (!map[subId]) map[subId] = [];
+        map[subId].push({
+          _id:             v._id,
+          voucherNumber:   v.voucherNumber || '—',
+          date:            v.date || v.createdAt,
+          remainingAmount: rem,
+          totalAmount:     v.amountInVoucher || v.amount || rem,
+        });
+      });
+
+      Object.keys(map).forEach(sid => {
+        map[sid].sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+
+      setSubAdvanceMap(map);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchSubs();
+    fetchWorks();
+    fetchSubAdvances();
+  }, [fetchSubs, fetchWorks, fetchSubAdvances]);
 
   const togglePanel = (panel) => {
     setPanel(prev => prev === panel ? null : panel);
@@ -166,6 +211,7 @@ function WorkSubcontractPage({ onLogout }) {
     setUpdateWorkId(''); setUpdateForm(emptyForm); setUpdateFound(null);
     setDeleteWorkId(''); setDeleteFound(null);
     setSelectedWorkId(''); setStatusFilter('All'); setPayFilter('All'); setSubFilter('');
+    fetchSubAdvances();
   };
 
   const getSubLabel = useCallback((work) => {
@@ -176,18 +222,39 @@ function WorkSubcontractPage({ onLogout }) {
     return found ? `${found.subcontractCode} — ${found.name}` : '—';
   }, [subs]);
 
+  const getSubId = useCallback((work) => {
+    const s = work.subcontract;
+    if (!s) return null;
+    if (typeof s === 'object') return s._id;
+    return s;
+  }, []);
+
+  const getAdvanceApplied = useCallback((work) => {
+    const grandTotal = Number(work.grandTotal || work.totalAmount || 0);
+    const paid       = Number(work.cumulativePaidAmount || 0);
+    return Math.min(paid, grandTotal);
+  }, []);
+
+  const getSubPendingAdvance = useCallback((work) => {
+    const subId = getSubId(work);
+    if (!subId) return 0;
+    const vouchers = subAdvanceMap[subId] || [];
+    return vouchers.reduce((s, v) => s + v.remainingAmount, 0);
+  }, [getSubId, subAdvanceMap]);
+
   const workOptions = works.map(w => ({
     value: w._id,
-    label: `[${w._id.slice(-6).toUpperCase()}] ${w.projectName} — ${getSubLabel(w)} — ${w.status} — ${w.paymentStatus} — ₹${Number(w.totalAmount || 0).toLocaleString('en-IN')}`,
+    label: `[${w._id.slice(-6).toUpperCase()}] ${w.projectName} — ${getSubLabel(w)} — ${w.status} — ${w.paymentStatus} — ₹${Number(w.grandTotal || w.totalAmount || 0).toLocaleString('en-IN')}`,
   }));
 
   // ── PRINT Single Project ──────────────────────────────
   const handlePrintWork = (work) => {
-    const fmt = v => Number(v || 0).toLocaleString('en-IN');
-    const subLabel = getSubLabel(work);
-    const bal = work.balanceAmount ?? ((work.totalAmount || 0) - (work.paidAmount || 0));
-    const grandTotal = Number(work.totalAmount || 0);
-    const paid       = Number(work.paidAmount  || 0);
+    const fmt        = v => Number(v || 0).toLocaleString('en-IN');
+    const subLabel   = getSubLabel(work);
+    const paid       = work.cumulativePaidAmount || 0;
+    const bal        = work.balanceAmount ?? 0;
+    const grandTotal = work.grandTotal || work.totalAmount || 0;
+    const advApplied = getAdvanceApplied(work);
 
     const payStatusColor =
       work.paymentStatus === 'Paid'    ? '#036b4e' :
@@ -197,8 +264,8 @@ function WorkSubcontractPage({ onLogout }) {
       work.status === 'In Progress' ? '#1d4ed8' :
       work.status === 'On Hold'     ? '#7a5000' : '#c93360';
 
-    const w = window.open('', '_blank', 'width=1050,height=780');
-    w.document.write(`<!DOCTYPE html>
+    const pw = window.open('', '_blank', 'width=1050,height=780');
+    pw.document.write(`<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8"/>
@@ -231,6 +298,9 @@ function WorkSubcontractPage({ onLogout }) {
   .row-paid .tot-val{color:#036b4e;}
   .row-bal  .tot-val{color:#c93360;}
   .row-zero .tot-val{color:#036b4e;}
+  .row-adv td{background:#f3e8ff;}
+  .row-adv .tot-lbl{color:#7c3aed;}
+  .row-adv .tot-val{color:#7c3aed;}
   .status-chip{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;}
   .footer{margin-top:40px;padding:14px 32px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#999;}
   @media print{body{padding:0;}.page{width:100%;margin:0;}@page{margin:8mm;}}
@@ -255,9 +325,9 @@ function WorkSubcontractPage({ onLogout }) {
       <div class="project-title">${work.projectName || ''}</div>
       <div class="meta-grid">
         <div class="meta-row"><span class="meta-key">Subcontractor</span><span class="meta-val">${subLabel}</span></div>
-        <div class="meta-row"><span class="meta-key">Print Date</span><span class="meta-val">${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
-        <div class="meta-row"><span class="meta-key">Start Date</span><span class="meta-val">${work.startDate ? work.startDate.split('T')[0] : '—'}</span></div>
-        <div class="meta-row"><span class="meta-key">End Date</span><span class="meta-val">${work.endDate ? work.endDate.split('T')[0] : '—'}</span></div>
+        <div class="meta-row"><span class="meta-key">Print Date</span><span class="meta-val">${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span></div>
+        <div class="meta-row"><span class="meta-key">Start Date</span><span class="meta-val">${fmtDate(work.startDate)}</span></div>
+        <div class="meta-row"><span class="meta-key">End Date</span><span class="meta-val">${fmtDate(work.endDate)}</span></div>
         <div class="meta-row">
           <span class="meta-key">Work Status</span>
           <span class="meta-val status-chip" style="color:${workStatusColor};border:1px solid ${workStatusColor};padding:3px 10px;">${work.status || 'Pending'}</span>
@@ -272,12 +342,12 @@ function WorkSubcontractPage({ onLogout }) {
     <div class="section-title">Payment Summary</div>
     <div class="totals-wrap">
       <table class="tot-tbl">
-        <tr><td class="tot-lbl">Total Contract Amount</td><td class="tot-val">₹${fmt(grandTotal)}</td></tr>
-        <tr class="row-paid"><td class="tot-lbl">Amount Paid</td><td class="tot-val">₹${fmt(paid)}</td></tr>
+        <tr class="row-grand"><td class="tot-lbl">Total Contract Amount</td><td class="tot-val">&#8377;${fmt(grandTotal)}</td></tr>
+        ${advApplied > 0 ? `<tr class="row-adv"><td class="tot-lbl">Advance Applied</td><td class="tot-val">&#8377;${fmt(advApplied)}</td></tr>` : ''}
+        <tr class="row-paid"><td class="tot-lbl">Total Paid</td><td class="tot-val">&#8377;${fmt(paid)}</td></tr>
         ${bal > 0
-          ? `<tr class="row-bal"><td class="tot-lbl">Balance Due</td><td class="tot-val">₹${fmt(bal)}</td></tr>`
-          : `<tr class="row-zero"><td class="tot-lbl">Balance Due</td><td class="tot-val">₹0</td></tr>`}
-        <tr class="row-grand"><td class="tot-lbl">Payment Status</td><td class="tot-val">${work.paymentStatus || 'Unpaid'}</td></tr>
+          ? `<tr class="row-bal"><td class="tot-lbl">Balance Due</td><td class="tot-val">&#8377;${fmt(bal)}</td></tr>`
+          : `<tr class="row-zero"><td class="tot-lbl">Balance Due</td><td class="tot-val">&#8377;0 ✓</td></tr>`}
       </table>
     </div>
   </div>
@@ -289,29 +359,34 @@ function WorkSubcontractPage({ onLogout }) {
 <script>window.onload = () => { window.focus(); window.print(); };</script>
 </body>
 </html>`);
-    w.document.close();
+    pw.document.close();
   };
 
   // ── PRINT All Projects ────────────────────────────────
   const handlePrintAllWorks = (worksToprint) => {
-    const fmt = v => Number(v || 0).toLocaleString('en-IN');
-    const totalContract = worksToprint.reduce((s, w) => s + (w.totalAmount || 0), 0);
-    const totalPaid     = worksToprint.reduce((s, w) => s + (w.paidAmount  || 0), 0);
-    const totalBal      = worksToprint.reduce((s, w) => s + (w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0))), 0);
+    const fmt           = v => Number(v || 0).toLocaleString('en-IN');
+    const totalContract = worksToprint.reduce((s, w) => s + (w.grandTotal || w.totalAmount || 0), 0);
+    const totalPaid     = worksToprint.reduce((s, w) => s + (w.cumulativePaidAmount || 0), 0);
+    const totalBal      = worksToprint.reduce((s, w) => s + (w.balanceAmount ?? 0), 0);
+    const totalAdv      = worksToprint.reduce((s, w) => s + getAdvanceApplied(w), 0);
 
     const rows = worksToprint.map((w, i) => {
-      const bal = w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0));
+      const paid     = w.cumulativePaidAmount || 0;
+      const bal      = w.balanceAmount ?? 0;
+      const total    = w.grandTotal || w.totalAmount || 0;
+      const adv      = getAdvanceApplied(w);
       const payColor  = w.paymentStatus === 'Paid' ? '#036b4e' : w.paymentStatus === 'Partial' ? '#7a5000' : '#c93360';
       const workColor = w.status === 'Completed' ? '#036b4e' : w.status === 'In Progress' ? '#1d4ed8' : w.status === 'On Hold' ? '#7a5000' : '#c93360';
       return `<tr>
         <td class="tc">${i + 1}</td>
         <td style="font-weight:700">${w.projectName || ''}</td>
         <td>${getSubLabel(w)}</td>
-        <td class="tc">${w.startDate ? w.startDate.split('T')[0] : '—'}</td>
-        <td class="tc">${w.endDate   ? w.endDate.split('T')[0]   : '—'}</td>
+        <td class="tc">${fmtDate(w.startDate)}</td>
+        <td class="tc">${fmtDate(w.endDate)}</td>
         <td class="tc"><span style="color:${workColor};font-weight:700;">${w.status || 'Pending'}</span></td>
-        <td class="tr">₹${fmt(w.totalAmount)}</td>
-        <td class="tr" style="color:#036b4e;font-weight:700;">₹${fmt(w.paidAmount)}</td>
+        <td class="tr">₹${fmt(total)}</td>
+        <td class="tr" style="color:#7c3aed;font-weight:700;">${adv > 0 ? `₹${fmt(adv)}` : '—'}</td>
+        <td class="tr" style="color:#036b4e;font-weight:700;">₹${fmt(paid)}</td>
         <td class="tr" style="color:${bal > 0 ? '#c93360' : '#036b4e'};font-weight:700;">₹${fmt(bal)}</td>
         <td class="tc"><span style="color:${payColor};font-weight:700;">${w.paymentStatus || 'Unpaid'}</span></td>
       </tr>`;
@@ -334,12 +409,13 @@ function WorkSubcontractPage({ onLogout }) {
   .hdr-addr{font-size:10.5px;line-height:1.85;color:#ffffff;}
   .hdr-doc-title{font-family:'Montserrat',sans-serif;font-size:24px;font-weight:900;letter-spacing:5px;color:#ffffff;text-align:right;white-space:nowrap;flex-shrink:0;}
   .body{padding:26px 32px 0;}
-  .summary-row{display:flex;gap:16px;margin-bottom:22px;}
-  .sum-card{flex:1;border-radius:8px;padding:14px 18px;display:flex;flex-direction:column;gap:5px;border:1.5px solid transparent;}
+  .summary-row{display:flex;gap:16px;margin-bottom:22px;flex-wrap:wrap;}
+  .sum-card{flex:1;min-width:130px;border-radius:8px;padding:14px 18px;display:flex;flex-direction:column;gap:5px;border:1.5px solid transparent;}
   .sum-card span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;opacity:0.75;}
   .sum-card strong{font-size:19px;font-weight:800;font-family:'Montserrat',sans-serif;}
   .s-total   {background:#fef9c3;color:#92400e;border-color:#fcd34d;}
   .s-contract{background:#fffbe8;color:#7a5000;border-color:#ffe08a;}
+  .s-adv     {background:#f3e8ff;color:#7c3aed;border-color:#ddd6fe;}
   .s-paid    {background:#e6fdf6;color:#036b4e;border-color:#a0f0d8;}
   .s-due     {background:#fff4f7;color:#c93360;border-color:#ffc8d4;}
   table{width:100%;border-collapse:collapse;}
@@ -370,29 +446,34 @@ function WorkSubcontractPage({ onLogout }) {
   </div>
   <div class="body">
     <div class="summary-row">
-      <div class="sum-card s-total">  <span>Total Projects</span><strong>${worksToprint.length}</strong></div>
+      <div class="sum-card s-total">   <span>Total Projects</span><strong>${worksToprint.length}</strong></div>
       <div class="sum-card s-contract"><span>Total Contract</span><strong>₹${fmt(totalContract)}</strong></div>
-      <div class="sum-card s-paid">   <span>Total Paid</span>    <strong>₹${fmt(totalPaid)}</strong></div>
-      <div class="sum-card s-due">    <span>Outstanding</span>   <strong>₹${fmt(totalBal)}</strong></div>
+      <div class="sum-card s-adv">     <span>Total Advance Applied</span><strong>₹${fmt(totalAdv)}</strong></div>
+      <div class="sum-card s-paid">    <span>Total Paid</span>    <strong>₹${fmt(totalPaid)}</strong></div>
+      <div class="sum-card s-due">     <span>Outstanding</span>   <strong>₹${fmt(totalBal)}</strong></div>
     </div>
     <table>
       <thead>
         <tr>
           <th class="tc" style="width:36px">S.No</th>
-          <th>Project Name</th><th>Subcontractor</th>
-          <th class="tc" style="width:80px">Start</th><th class="tc" style="width:80px">End</th>
+          <th>Project Name</th>
+          <th>Subcontractor</th>
+          <th class="tc" style="width:80px">Start</th>
+          <th class="tc" style="width:80px">End</th>
           <th class="tc" style="width:80px">Work Status</th>
           <th class="tr" style="width:90px">Total (₹)</th>
+          <th class="tr" style="width:90px">Advance (₹)</th>
           <th class="tr" style="width:90px">Paid (₹)</th>
           <th class="tr" style="width:90px">Balance (₹)</th>
           <th class="tc" style="width:80px">Payment</th>
         </tr>
       </thead>
-      <tbody>${rows || `<tr><td colspan="10" style="text-align:center;padding:20px;color:#aaa">No projects</td></tr>`}</tbody>
+      <tbody>${rows || `<tr><td colspan="11" style="text-align:center;padding:20px;color:#aaa">No projects</td></tr>`}</tbody>
       <tfoot>
         <tr>
           <td colspan="6" style="text-align:right;">TOTAL</td>
           <td class="tr">₹${fmt(totalContract)}</td>
+          <td class="tr" style="color:#c8b4fa;">₹${fmt(totalAdv)}</td>
           <td class="tr" style="color:#5de8c8;">₹${fmt(totalPaid)}</td>
           <td class="tr" style="color:#ff8fab;">₹${fmt(totalBal)}</td>
           <td></td>
@@ -402,7 +483,7 @@ function WorkSubcontractPage({ onLogout }) {
   </div>
   <div class="footer">
     <span>designart &nbsp;|&nbsp; 5-6, Indira Nagar, Coimbatore 641012</span>
-    <span>Projects Report — ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} — Confidential</span>
+    <span>Projects Report — ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })} — Confidential</span>
   </div>
 </div>
 <script>window.onload = () => { window.focus(); window.print(); };</script>
@@ -429,16 +510,23 @@ function WorkSubcontractPage({ onLogout }) {
           description: addForm.description.trim(),
           startDate:   addForm.startDate || undefined,
           endDate:     addForm.endDate   || undefined,
-          status:      addForm.status,          // ✅ now sent correctly
+          status:      addForm.status,
           totalAmount: parseFloat(addForm.totalAmount),
-          paidAmount:  0,                        // always 0 on create; paid via Vouchers
+          gstPercent:  0,
         }),
       });
       const data = await res.json();
       if (res.ok) {
+        const saved = data.data;
+        const paid  = saved?.cumulativePaidAmount || 0;
         await fetchWorks();
+        await fetchSubAdvances();
         setAddForm(emptyForm);
-        showToast(`Project "${data.data?.projectName || addForm.projectName}" added!`);
+        if (paid > 0) {
+          showToast(`✅ Project "${saved.projectName}" added! ₹${paid.toLocaleString('en-IN')} advance auto-applied.`);
+        } else {
+          showToast(`Project "${data.data?.projectName || addForm.projectName}" added!`);
+        }
       } else { showToast(data.message || data.error || 'Failed to add project', 'error'); }
     } catch { showToast('Network error while adding project', 'error'); }
     finally  { setLoading(false); }
@@ -457,8 +545,7 @@ function WorkSubcontractPage({ onLogout }) {
         startDate:   found.startDate ? found.startDate.split('T')[0] : '',
         endDate:     found.endDate   ? found.endDate.split('T')[0]   : '',
         status:      found.status        || 'Pending',
-        totalAmount: found.totalAmount   ?? '',
-        // paidAmount intentionally NOT included — managed by Vouchers
+        totalAmount: found.grandTotal    ?? found.totalAmount ?? '',
       });
     } else { setUpdateFound(null); setUpdateForm(emptyForm); }
   };
@@ -468,7 +555,6 @@ function WorkSubcontractPage({ onLogout }) {
     e.preventDefault();
     if (!updateFound)                   { showToast('Please select a project', 'error');  return; }
     if (!updateForm.projectName.trim()) { showToast('Project Name is required', 'error'); return; }
-    if (!updateForm.totalAmount)        { showToast('Total Amount is required', 'error'); return; }
     try {
       setLoading(true);
       const res = await fetch(`${API}/workSubcontract/update/${updateFound._id}`, {
@@ -479,9 +565,7 @@ function WorkSubcontractPage({ onLogout }) {
           description: updateForm.description.trim(),
           startDate:   updateForm.startDate || undefined,
           endDate:     updateForm.endDate   || undefined,
-          status:      updateForm.status,       // ✅ always sent
-          totalAmount: parseFloat(updateForm.totalAmount),
-          // paidAmount intentionally NOT updated here — managed by Vouchers
+          status:      updateForm.status,
         }),
       });
       const data = await res.json();
@@ -502,12 +586,17 @@ function WorkSubcontractPage({ onLogout }) {
 
   const handleDelete = async () => {
     if (!deleteFound) { showToast('Please select a project', 'error'); return; }
+    if ((deleteFound.cumulativePaidAmount || 0) > 0) {
+      showToast('Cannot delete a project that has existing payments. Delete the linked vouchers first.', 'error');
+      return;
+    }
     try {
       setLoading(true);
       const res  = await fetch(`${API}/workSubcontract/delete/${deleteFound._id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
         await fetchWorks();
+        await fetchSubAdvances();
         if (selectedWorkId === deleteFound._id) setSelectedWorkId('');
         showToast(`Project "${deleteFound.projectName}" deleted!`, 'info');
         setDeleteFound(null); setDeleteWorkId('');
@@ -526,9 +615,10 @@ function WorkSubcontractPage({ onLogout }) {
   });
 
   const selectedWorkObj = works.find(w => w._id === selectedWorkId);
-  const totalContract   = filteredWorks.reduce((s, w) => s + (w.totalAmount || 0), 0);
-  const totalPaid       = filteredWorks.reduce((s, w) => s + (w.paidAmount  || 0), 0);
-  const totalBal        = filteredWorks.reduce((s, w) => s + (w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0))), 0);
+  const totalContract   = filteredWorks.reduce((s, w) => s + (w.grandTotal || w.totalAmount || 0), 0);
+  const totalPaid       = filteredWorks.reduce((s, w) => s + (w.cumulativePaidAmount || 0), 0);
+  const totalBal        = filteredWorks.reduce((s, w) => s + (w.balanceAmount ?? 0), 0);
+  const totalAdvApplied = filteredWorks.reduce((s, w) => s + getAdvanceApplied(w), 0);
 
   // ── Badges ────────────────────────────────────────────
   const statusBadge = (status) => {
@@ -554,11 +644,42 @@ function WorkSubcontractPage({ onLogout }) {
           </span>
         </div>
 
-        <div className="actions-row">
-          <button className="action-btn btn-add"    onClick={() => togglePanel(PANELS.ADD)}>Add Project</button>
-          <button className="action-btn btn-update" onClick={() => togglePanel(PANELS.UPDATE)}>Update Project</button>
-          <button className="action-btn btn-delete" onClick={() => togglePanel(PANELS.DELETE)}>Delete Project</button>
-          <button className="action-btn btn-getall" onClick={() => togglePanel(PANELS.GETALL)}>All Projects</button>
+        <div className="action-cards-grid">
+          <div
+            className={`action-card action-card-add ${activePanel === PANELS.ADD ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.ADD)}
+          >
+            <div className="action-card-icon">➕</div>
+            <div className="action-card-title">Add Project</div>
+            <div className="action-card-desc">Add a new project work</div>
+          </div>
+
+          <div
+            className={`action-card action-card-update ${activePanel === PANELS.UPDATE ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.UPDATE)}
+          >
+            <div className="action-card-icon">✏️</div>
+            <div className="action-card-title">Update Project</div>
+            <div className="action-card-desc">Edit existing project info</div>
+          </div>
+
+          <div
+            className={`action-card action-card-getall ${activePanel === PANELS.GETALL ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.GETALL)}
+          >
+            <div className="action-card-icon">📋</div>
+            <div className="action-card-title">All Projects</div>
+            <div className="action-card-desc">View all project records</div>
+          </div>
+
+          <div
+            className={`action-card action-card-delete ${activePanel === PANELS.DELETE ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.DELETE)}
+          >
+            <div className="action-card-icon">🗑️</div>
+            <div className="action-card-title">Delete Project</div>
+            <div className="action-card-desc">Remove a project record</div>
+          </div>
         </div>
 
         {loading && <div className="loading-bar"><div className="loading-inner sub-loading" /></div>}
@@ -567,11 +688,85 @@ function WorkSubcontractPage({ onLogout }) {
         {activePanel === PANELS.ADD && (
           <div className="panel-section" key="add">
             <div className="panel-title">Add New Project</div>
+
+            <div className="autofill-banner full-width" style={{ background: '#eff6ff', borderColor: '#bfdbfe', marginBottom: 16 }}>
+              <span className="autofill-icon">💡</span>
+              <span style={{ color: '#1e40af', fontSize: 13 }}>
+                If this subcontractor has any <strong>advance vouchers</strong> with remaining balance,
+                the system will automatically deduct them from this project upon creation.
+              </span>
+            </div>
+
             <div className="work-info-note">
               ℹ️ Payments are recorded via <strong>Vouchers</strong>. Enter only the contract total here.
             </div>
+
             <form onSubmit={handleAdd}>
               <WorkFormFields form={addForm} setForm={setAddForm} subs={subs} isUpdate={false} />
+
+              {addForm.subcontract && (() => {
+                const advVouchers = subAdvanceMap[addForm.subcontract] || [];
+                const advTotal    = advVouchers.reduce((s, v) => s + v.remainingAmount, 0);
+                if (advTotal > 0) {
+                  return (
+                    <div style={{
+                      marginBottom: 16,
+                      borderRadius: 12,
+                      border: '1.5px solid #c4b5fd',
+                      background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        padding: '10px 16px',
+                        background: '#7c3aed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>💰</span>
+                          <span style={{ color: '#fff', fontWeight: 700, fontSize: 13 }}>
+                            Subcontractor Advance Available — Will Auto-Apply on Creation
+                          </span>
+                        </div>
+                        <span style={{
+                          background: 'rgba(255,255,255,0.2)', color: '#fff',
+                          borderRadius: 20, padding: '2px 12px', fontSize: 13, fontWeight: 700,
+                        }}>
+                          ₹{Number(advTotal).toLocaleString('en-IN')} Total
+                        </span>
+                      </div>
+                      <div style={{ padding: '10px 16px', fontSize: 13, color: '#555' }}>
+                        {advVouchers.map((v, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: i < advVouchers.length - 1 ? 4 : 0 }}>
+                            <span style={{
+                              background: '#f3e8ff', color: '#7c3aed', borderRadius: 6,
+                              padding: '2px 8px', fontWeight: 700, fontSize: 12,
+                              border: '1px solid #ddd6fe',
+                            }}>{v.voucherNumber}</span>
+                            <span style={{ color: '#888', fontSize: 12 }}>
+                              {fmtDate(v.date)}
+                            </span>
+                            <span style={{ fontWeight: 700, color: '#7c3aed' }}>
+                              ₹{Number(v.remainingAmount).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <div style={{
+                    marginBottom: 16, padding: '10px 14px',
+                    background: '#f8faff', borderRadius: 8,
+                    border: '1px solid #dde5f8', fontSize: 13, color: '#888',
+                  }}>
+                    ℹ️ This subcontractor has no pending advance vouchers.
+                  </div>
+                );
+              })()}
+
               <button type="submit" className="submit-btn" disabled={loading}>
                 {loading ? 'Adding...' : 'Add Project'}
               </button>
@@ -593,9 +788,18 @@ function WorkSubcontractPage({ onLogout }) {
                   <span className="update-found-id">{updateFound.status}</span>
                   <span className="update-found-name">{updateFound.projectName}</span>
                   {statusBadge(updateFound.paymentStatus)}
+                  {getAdvanceApplied(updateFound) > 0 && (
+                    <span style={{
+                      fontSize: 12, background: '#f3e8ff', color: '#7c3aed',
+                      padding: '2px 8px', borderRadius: 6, marginLeft: 8,
+                      fontWeight: 700, border: '1px solid #ddd6fe',
+                    }}>
+                      💰 Adv − ₹{getAdvanceApplied(updateFound).toLocaleString('en-IN')}
+                    </span>
+                  )}
                 </div>
                 <div className="work-info-note">
-                  ℹ️ Subcontractor cannot be changed during update. Payments tracked via Vouchers.
+                  ℹ️ Subcontractor and total amount cannot be changed during update. Payments tracked via Vouchers.
                 </div>
                 <form onSubmit={handleUpdate}>
                   <WorkFormFields form={updateForm} setForm={setUpdateForm} subs={subs} isUpdate={true} />
@@ -620,22 +824,34 @@ function WorkSubcontractPage({ onLogout }) {
             {deleteFound && (
               <div className="detail-card" style={{ marginTop: 20 }}>
                 {[
-                  ['Subcontractor', getSubLabel(deleteFound)],
-                  ['Project Name',  deleteFound.projectName],
-                  ['Description',   deleteFound.description || '—'],
-                  ['Start Date',    deleteFound.startDate ? deleteFound.startDate.split('T')[0] : '—'],
-                  ['End Date',      deleteFound.endDate   ? deleteFound.endDate.split('T')[0]   : '—'],
-                  ['Work Status',   deleteFound.status],
-                  ['Total Amount',  `₹${(deleteFound.totalAmount || 0).toLocaleString('en-IN')}`],
-                  ['Paid Amount',   `₹${(deleteFound.paidAmount  || 0).toLocaleString('en-IN')}`],
-                  ['Balance',       `₹${(deleteFound.balanceAmount ?? ((deleteFound.totalAmount || 0) - (deleteFound.paidAmount || 0))).toLocaleString('en-IN')}`],
-                  ['Payment Status', deleteFound.paymentStatus],
+                  ['Subcontractor',   getSubLabel(deleteFound)],
+                  ['Project Name',    deleteFound.projectName],
+                  ['Description',     deleteFound.description || '—'],
+                  ['Start Date',      fmtDate(deleteFound.startDate)],
+                  ['End Date',        fmtDate(deleteFound.endDate)],
+                  ['Work Status',     deleteFound.status],
+                  ['Total Amount',    `₹${(deleteFound.grandTotal || deleteFound.totalAmount || 0).toLocaleString('en-IN')}`],
+                  ['Advance Applied', `₹${getAdvanceApplied(deleteFound).toLocaleString('en-IN')}`],
+                  ['Paid Amount',     `₹${(deleteFound.cumulativePaidAmount || 0).toLocaleString('en-IN')}`],
+                  ['Balance',         `₹${(deleteFound.balanceAmount ?? 0).toLocaleString('en-IN')}`],
+                  ['Payment Status',  deleteFound.paymentStatus],
                 ].map(([k, v]) => (
-                  <div className="detail-row" key={k}>
+                  <div className="detail-row" key={k}
+                    style={k === 'Advance Applied' && getAdvanceApplied(deleteFound) > 0
+                      ? { background: '#f3e8ff', borderColor: '#ddd6fe' } : {}}>
                     <span className="detail-key">{k}</span>
-                    <span className="detail-val">{v}</span>
+                    <span className="detail-val"
+                      style={k === 'Advance Applied' ? { color: '#7c3aed', fontWeight: 800 } : {}}>
+                      {v}
+                    </span>
                   </div>
                 ))}
+                {(deleteFound.cumulativePaidAmount || 0) > 0 && (
+                  <div className="work-info-note" style={{ marginTop: 12, background: '#fff4f7', borderColor: '#ffc8d4', color: '#c93360' }}>
+                    ⚠️ This project has existing payments (₹{(deleteFound.cumulativePaidAmount || 0).toLocaleString('en-IN')} paid).
+                    Backend will reject this delete. Remove linked vouchers first.
+                  </div>
+                )}
                 <button className="delete-confirm-btn" style={{ marginTop: 16 }} onClick={handleDelete} disabled={loading}>
                   {loading ? 'Deleting...' : 'Confirm Delete'}
                 </button>
@@ -655,10 +871,14 @@ function WorkSubcontractPage({ onLogout }) {
             </div>
 
             <div className="work-summary-chips">
-              <div className="work-chip-card work-chip-total">  <span>Total Projects</span><strong>{filteredWorks.length}</strong></div>
-              <div className="work-chip-card work-chip-contract"><span>Total Contract</span><strong>₹{totalContract.toLocaleString('en-IN')}</strong></div>
-              <div className="work-chip-card work-chip-paid">   <span>Total Paid</span>    <strong>₹{totalPaid.toLocaleString('en-IN')}</strong></div>
-              <div className="work-chip-card work-chip-due">    <span>Outstanding</span>   <strong>₹{totalBal.toLocaleString('en-IN')}</strong></div>
+              <div className="work-chip-card work-chip-total">   <span>Total Projects</span><strong>{filteredWorks.length}</strong></div>
+              <div className="work-chip-card work-chip-contract"><span>Total Contract</span> <strong>₹{totalContract.toLocaleString('en-IN')}</strong></div>
+              <div className="work-chip-card" style={{ background: '#f3e8ff', border: '1.5px solid #ddd6fe' }}>
+                <span style={{ color: '#7c3aed' }}>Advance Applied</span>
+                <strong style={{ color: '#7c3aed' }}>₹{totalAdvApplied.toLocaleString('en-IN')}</strong>
+              </div>
+              <div className="work-chip-card work-chip-paid">    <span>Total Paid</span>     <strong>₹{totalPaid.toLocaleString('en-IN')}</strong></div>
+              <div className="work-chip-card work-chip-due">     <span>Outstanding</span>    <strong>₹{totalBal.toLocaleString('en-IN')}</strong></div>
             </div>
 
             <div className="work-filters-row">
@@ -708,6 +928,15 @@ function WorkSubcontractPage({ onLogout }) {
                         <div style={{ marginTop: 4, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                           {workStatusBadge(selectedWorkObj.status)}
                           {statusBadge(selectedWorkObj.paymentStatus)}
+                          {getAdvanceApplied(selectedWorkObj) > 0 && (
+                            <span style={{
+                              fontSize: 12, fontWeight: 700, color: '#7c3aed',
+                              background: '#f3e8ff', border: '1px solid #ddd6fe',
+                              borderRadius: 6, padding: '2px 8px',
+                            }}>
+                              💰 Adv − ₹{Number(getAdvanceApplied(selectedWorkObj)).toLocaleString('en-IN')}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -720,19 +949,25 @@ function WorkSubcontractPage({ onLogout }) {
                     </div>
                     <div className="work-detail-grid">
                       {[
-                        ['Subcontractor', getSubLabel(selectedWorkObj)],
-                        ['Description',   selectedWorkObj.description || '—'],
-                        ['Start Date',    selectedWorkObj.startDate ? selectedWorkObj.startDate.split('T')[0] : '—'],
-                        ['End Date',      selectedWorkObj.endDate   ? selectedWorkObj.endDate.split('T')[0]   : '—'],
-                        ['Work Status',   selectedWorkObj.status],
-                        ['Total Amount',  `₹${Number(selectedWorkObj.totalAmount).toLocaleString('en-IN')}`],
-                        ['Paid Amount',   `₹${Number(selectedWorkObj.paidAmount  || 0).toLocaleString('en-IN')}`],
-                        ['Balance',       `₹${Number(selectedWorkObj.balanceAmount ?? ((selectedWorkObj.totalAmount || 0) - (selectedWorkObj.paidAmount || 0))).toLocaleString('en-IN')}`],
-                        ['Payment Status', selectedWorkObj.paymentStatus],
+                        ['Subcontractor',   getSubLabel(selectedWorkObj)],
+                        ['Description',     selectedWorkObj.description || '—'],
+                        ['Start Date',      fmtDate(selectedWorkObj.startDate)],
+                        ['End Date',        fmtDate(selectedWorkObj.endDate)],
+                        ['Work Status',     selectedWorkObj.status],
+                        ['Total Amount',    `₹${Number(selectedWorkObj.grandTotal || selectedWorkObj.totalAmount || 0).toLocaleString('en-IN')}`],
+                        ['Advance Applied', `₹${Number(getAdvanceApplied(selectedWorkObj)).toLocaleString('en-IN')}`],
+                        ['Paid Amount',     `₹${Number(selectedWorkObj.cumulativePaidAmount || 0).toLocaleString('en-IN')}`],
+                        ['Balance',         `₹${Number(selectedWorkObj.balanceAmount ?? 0).toLocaleString('en-IN')}`],
+                        ['Payment Status',  selectedWorkObj.paymentStatus],
                       ].map(([k, v]) => (
-                        <div className="inv-detail-item" key={k}>
+                        <div className="inv-detail-item" key={k}
+                          style={k === 'Advance Applied' && getAdvanceApplied(selectedWorkObj) > 0
+                            ? { background: '#f3e8ff', borderColor: '#ddd6fe' } : {}}>
                           <span className="inv-detail-key">{k}</span>
-                          <span className="inv-detail-val">{v}</span>
+                          <span className="inv-detail-val"
+                            style={k === 'Advance Applied' ? { color: '#7c3aed', fontWeight: 800 } : {}}>
+                            {v}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -741,7 +976,10 @@ function WorkSubcontractPage({ onLogout }) {
 
                 <div className="work-card-list">
                   {filteredWorks.map(w => {
-                    const bal        = w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0));
+                    const paid       = w.cumulativePaidAmount || 0;
+                    const bal        = w.balanceAmount ?? 0;
+                    const total      = w.grandTotal || w.totalAmount || 0;
+                    const advApplied = getAdvanceApplied(w);
                     const isSelected = selectedWorkId === w._id;
                     return (
                       <div key={w._id}
@@ -754,12 +992,21 @@ function WorkSubcontractPage({ onLogout }) {
                         </div>
                         <div className="work-row-mid">
                           <div className="work-row-dates">
-                            {w.startDate ? w.startDate.split('T')[0] : ''}
-                            {w.endDate   ? ` → ${w.endDate.split('T')[0]}` : ''}
+                            {fmtDate(w.startDate)}
+                            {w.endDate ? ` → ${fmtDate(w.endDate)}` : ''}
                           </div>
-                          <div style={{ display: 'flex', gap: 14, marginTop: 4, flexWrap: 'wrap' }}>
-                            <span className="work-row-amt">₹{Number(w.totalAmount).toLocaleString('en-IN')}</span>
-                            <span className="work-row-paid">Paid ₹{Number(w.paidAmount || 0).toLocaleString('en-IN')}</span>
+                          <div style={{ display: 'flex', gap: 14, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <span className="work-row-amt">₹{Number(total).toLocaleString('en-IN')}</span>
+                            {advApplied > 0 && (
+                              <span style={{
+                                fontSize: 12, fontWeight: 700, color: '#7c3aed',
+                                background: '#f3e8ff', border: '1px solid #ddd6fe',
+                                borderRadius: 6, padding: '1px 7px',
+                              }}>
+                                💰 Adv ₹{Number(advApplied).toLocaleString('en-IN')}
+                              </span>
+                            )}
+                            <span className="work-row-paid">Paid ₹{Number(paid).toLocaleString('en-IN')}</span>
                             {bal > 0 && <span className="work-row-bal">Bal ₹{Number(bal).toLocaleString('en-IN')}</span>}
                           </div>
                         </div>

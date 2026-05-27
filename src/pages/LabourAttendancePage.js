@@ -9,7 +9,6 @@ import '../styles/LabourAttendancePage.css';
 const API_BASE_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PANELS = { ADD: 'add', UPDATE: 'update', DELETE: 'delete', GETALL: 'getall' };
 
-// ─── CSV export helper ────────────────────────────────────────────────────────
 function exportToCSV(rows, filename) {
   const headers = ['Date', 'Labour', 'Name', 'Work Type', 'Site', 'Start Time', 'End Time', 'Total Hours', 'Overtime (hrs)', 'Day Salary (₹)'];
   const escape  = (v) => {
@@ -40,34 +39,28 @@ function LabourAttendancePage({ onLogout }) {
   const [toast, setToast]           = useState(null);
   const [loading, setLoading]       = useState(false);
 
-  // ── ADD ────────────────────────────────────────────────────
   const [addMode, setAddMode]       = useState('single');
   const [commonDate, setCommonDate] = useState(new Date().toISOString().split('T')[0]);
-
-  // Single add
   const [addForm, setAddForm] = useState({ labourMongoId: '', siteName: '', startTime: '', endTime: '' });
-
-  // Multiple add — shared fields + selected labours list
   const [multiCommon, setMultiCommon] = useState({ siteName: '', startTime: '', endTime: '' });
   const [selectedLabourIds, setSelectedLabourIds] = useState([]);
 
-  // UPDATE
   const [updateAttId, setUpdateAttId]   = useState('');
   const [updateFound, setUpdateFound]   = useState(null);
   const [updateForm, setUpdateForm]     = useState({ siteName: '', startTime: '', endTime: '' });
 
-  // DELETE
   const [deleteAttId, setDeleteAttId]   = useState('');
   const [deleteFound, setDeleteFound]   = useState(null);
 
-  // GETALL filters
   const [selectedAttId, setSelectedAttId] = useState('');
-  const [dateFilter, setDateFilter]       = useState('');
   const [labourFilter, setLabourFilter]   = useState('');
+  const [dateFilterMode, setDateFilterMode]   = useState('single');
+  const [singleDateFilter, setSingleDateFilter] = useState('');
+  const [fromDateFilter, setFromDateFilter]     = useState('');
+  const [toDateFilter, setToDateFilter]         = useState('');
 
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
 
-  // ── Fetch attendance (accepts a labourList to enrich immediately) ──────────
   const fetchAttendance = useCallback(async (labourList = []) => {
     try {
       setLoading(true);
@@ -86,9 +79,9 @@ function LabourAttendancePage({ onLogout }) {
           totalHours:    a.totalHours    || 0,
           overtimeHours: a.overtimeHours || 0,
           labourMongoId: labMongoId,
-          labourId:      lab?.labourId   || '',        // ✅ directly mapped
+          labourId:      lab?.labourId   || '',
           labourName:    lab?.name       || a.labour?.name || '',
-          workType:      lab?.workType   || '',        // ✅ directly mapped
+          workType:      lab?.workType   || '',
           dailyWage:     lab?.dailyWage  || 0,
         };
       });
@@ -97,7 +90,6 @@ function LabourAttendancePage({ onLogout }) {
     finally { setLoading(false); }
   }, [showToast]);
 
-  // ── Init: fetch labours first, then pass list to fetchAttendance ──────────
   useEffect(() => {
     const init = async () => {
       try {
@@ -105,7 +97,7 @@ function LabourAttendancePage({ onLogout }) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : [];
         setLabours(list);
-        await fetchAttendance(list); // ✅ pass fresh list — no race condition
+        await fetchAttendance(list);
       } catch {
         showToast('Failed to fetch data', 'error');
       }
@@ -113,7 +105,16 @@ function LabourAttendancePage({ onLogout }) {
     init();
   }, [fetchAttendance, showToast]);
 
-  // ── Helpers ───────────────────────────────────────────────
+  // ── KEY FIX: Get labour IDs that already have attendance on commonDate ──
+  const labourIdsWithAttendanceOnDate = useCallback((date) => {
+    if (!date) return new Set();
+    return new Set(
+      attendance
+        .filter(a => new Date(a.date).toISOString().split('T')[0] === date)
+        .map(a => a.labourMongoId?._id || a.labourMongoId)
+    );
+  }, [attendance]);
+
   const calculateHours = (start, end) => {
     if (!start || !end) return { totalHours: 0, overtime: 0 };
     const [sh, sm] = start.split(':').map(Number);
@@ -128,8 +129,7 @@ function LabourAttendancePage({ onLogout }) {
     const lab = labours.find(l => l._id === (rec.labourMongoId?._id || rec.labourMongoId));
     const wage = lab?.dailyWage || rec.dailyWage;
     if (!wage) return '—';
-    const perHour = wage / 8;
-    return `₹${(rec.totalHours * perHour).toFixed(0)}`;
+    return `₹${(rec.totalHours * (wage / 8)).toFixed(0)}`;
   };
 
   const calcDaySalaryNum = (rec) => {
@@ -140,9 +140,22 @@ function LabourAttendancePage({ onLogout }) {
   };
 
   const getLabourByMongoId = (id) => labours.find(l => l._id === id);
+  const sanitizeSiteName = (val) => (val && val.trim()) ? val.trim() : 'N/A';
 
-  // ── Dropdown options ──────────────────────────────────────
+  // ── Dropdown options with duplicate-date disable ──────────
+  const alreadyMarkedIds = labourIdsWithAttendanceOnDate(commonDate);
+
+  // Single mode: disable labours already marked on commonDate
   const labourOptions = labours.map(l => ({
+    value: l._id,
+    label: alreadyMarkedIds.has(l._id)
+      ? `${l.labourId} — ${l.name} (${l.workType || 'Worker'}) ✓ Already marked`
+      : `${l.labourId} — ${l.name} (${l.workType || 'Worker'})`,
+    disabled: alreadyMarkedIds.has(l._id),
+  }));
+
+  // For filter dropdown (no disabled)
+  const labourOptionsForFilter = labours.map(l => ({
     value: l._id,
     label: `${l.labourId} — ${l.name} (${l.workType || 'Worker'})`,
   }));
@@ -152,7 +165,6 @@ function LabourAttendancePage({ onLogout }) {
     label: `${new Date(a.date).toLocaleDateString('en-IN')} — ${a.labourId || a.labourMongoId} (${a.labourName}) — ${a.startTime} to ${a.endTime}`,
   }));
 
-  // ── Toggle panel ──────────────────────────────────────────
   const togglePanel = (panel) => {
     setPanel(prev => prev === panel ? null : panel);
     setAddForm({ labourMongoId: '', siteName: '', startTime: '', endTime: '' });
@@ -160,10 +172,27 @@ function LabourAttendancePage({ onLogout }) {
     setSelectedLabourIds([]);
     setUpdateAttId(''); setUpdateFound(null); setUpdateForm({ siteName: '', startTime: '', endTime: '' });
     setDeleteAttId(''); setDeleteFound(null);
-    setSelectedAttId(''); setDateFilter(''); setLabourFilter('');
+    setSelectedAttId('');
+    setLabourFilter('');
+    setDateFilterMode('single');
+    setSingleDateFilter('');
+    setFromDateFilter('');
+    setToDateFilter('');
   };
 
-  // ── Multi-select labour toggle ────────────────────────────
+  const clearDateFilters = () => {
+    setSingleDateFilter('');
+    setFromDateFilter('');
+    setToDateFilter('');
+    setSelectedAttId('');
+  };
+
+  const clearAllFilters = () => {
+    setLabourFilter('');
+    clearDateFilters();
+    setSelectedAttId('');
+  };
+
   const toggleLabourSelection = (mongoId) => {
     setSelectedLabourIds(prev =>
       prev.includes(mongoId) ? prev.filter(id => id !== mongoId) : [...prev, mongoId]
@@ -178,7 +207,15 @@ function LabourAttendancePage({ onLogout }) {
   const handleAddSingle = async (e) => {
     e.preventDefault();
     if (!addForm.labourMongoId || !commonDate || !addForm.startTime || !addForm.endTime) {
-      showToast('All fields are required', 'error'); return;
+      showToast('Labour, Date, Start Time and End Time are required', 'error'); return;
+    }
+    // FRONTEND DUPLICATE CHECK
+    if (alreadyMarkedIds.has(addForm.labourMongoId)) {
+      showToast('Attendance already marked for this labour on selected date', 'error'); return;
+    }
+    const { totalHours } = calculateHours(addForm.startTime, addForm.endTime);
+    if (totalHours <= 0) {
+      showToast('End time must be after start time', 'error'); return;
     }
     try {
       setLoading(true);
@@ -187,7 +224,7 @@ function LabourAttendancePage({ onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date:     commonDate,
-          siteName: addForm.siteName,
+          siteName: sanitizeSiteName(addForm.siteName),
           labours: [{
             labourId:  addForm.labourMongoId,
             startTime: addForm.startTime,
@@ -197,9 +234,13 @@ function LabourAttendancePage({ onLogout }) {
       });
       const data = await res.json();
       if (res.ok) {
-        await fetchAttendance(labours);
-        setAddForm({ labourMongoId: '', siteName: '', startTime: '', endTime: '' });
-        showToast(`Attendance saved! (${data.count} record)`);
+        if (data.count === 0) {
+          showToast('Attendance already exists for this labour on this date', 'error');
+        } else {
+          await fetchAttendance(labours);
+          setAddForm({ labourMongoId: '', siteName: '', startTime: '', endTime: '' });
+          showToast(`Attendance saved! (${data.count} record)`);
+        }
       } else {
         showToast(data.message || 'Failed to add attendance', 'error');
       }
@@ -215,6 +256,10 @@ function LabourAttendancePage({ onLogout }) {
     if (!commonDate || !multiCommon.startTime || !multiCommon.endTime) {
       showToast('Please fill date, start time and end time', 'error'); return;
     }
+    const { totalHours } = calculateHours(multiCommon.startTime, multiCommon.endTime);
+    if (totalHours <= 0) {
+      showToast('End time must be after start time', 'error'); return;
+    }
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/attendance/add`, {
@@ -222,7 +267,7 @@ function LabourAttendancePage({ onLogout }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date:     commonDate,
-          siteName: multiCommon.siteName || '',
+          siteName: sanitizeSiteName(multiCommon.siteName),
           labours: selectedLabourIds.map(id => ({
             labourId:  id,
             startTime: multiCommon.startTime,
@@ -232,10 +277,17 @@ function LabourAttendancePage({ onLogout }) {
       });
       const data = await res.json();
       if (res.ok) {
+        const skipped = selectedLabourIds.length - data.count;
         await fetchAttendance(labours);
         setSelectedLabourIds([]);
         setMultiCommon({ siteName: '', startTime: '', endTime: '' });
-        showToast(`${data.count} attendance record(s) saved!`);
+        if (skipped > 0 && data.count === 0) {
+          showToast(`All ${skipped} records already exist for this date`, 'error');
+        } else if (skipped > 0) {
+          showToast(`${data.count} saved, ${skipped} skipped (already exist)`, 'info');
+        } else {
+          showToast(`${data.count} attendance record(s) saved!`);
+        }
       } else {
         showToast(data.message || 'Failed to add attendance', 'error');
       }
@@ -256,22 +308,29 @@ function LabourAttendancePage({ onLogout }) {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!updateFound) { showToast('Please select attendance record', 'error'); return; }
+    const { totalHours } = calculateHours(updateForm.startTime, updateForm.endTime);
+    if (totalHours <= 0) {
+      showToast('End time must be after start time', 'error'); return;
+    }
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/attendance/update/${updateFound._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          siteName:  updateForm.siteName,
+          siteName:  sanitizeSiteName(updateForm.siteName),
           startTime: updateForm.startTime,
           endTime:   updateForm.endTime,
         }),
       });
+      const data = await res.json();
       if (res.ok) {
         await fetchAttendance(labours);
         showToast('Attendance updated successfully!');
         setUpdateFound(null); setUpdateAttId(''); setUpdateForm({ siteName: '', startTime: '', endTime: '' });
-      } else { showToast('Failed to update attendance', 'error'); }
+      } else {
+        showToast(data.message || 'Failed to update attendance', 'error');
+      }
     } catch { showToast('Error updating attendance', 'error'); }
     finally { setLoading(false); }
   };
@@ -287,37 +346,63 @@ function LabourAttendancePage({ onLogout }) {
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/attendance/delete/${deleteFound._id}`, { method: 'DELETE' });
+      const data = await res.json();
       if (res.ok) {
         await fetchAttendance(labours);
         showToast('Attendance deleted successfully!', 'info');
         setDeleteFound(null); setDeleteAttId('');
-      } else { showToast('Failed to delete attendance', 'error'); }
+      } else {
+        showToast(data.message || 'Failed to delete attendance', 'error');
+      }
     } catch { showToast('Error deleting attendance', 'error'); }
     finally { setLoading(false); }
   };
 
   // ── Filtered attendance ───────────────────────────────────
   const filteredAttendance = attendance.filter(a => {
-    const matchDate   = dateFilter   ? new Date(a.date).toISOString().split('T')[0] === dateFilter : true;
-    const matchLabour = labourFilter ? (a.labourMongoId?._id || a.labourMongoId) === labourFilter   : true;
-    return matchDate && matchLabour;
+    const matchLabour = labourFilter
+      ? (a.labourMongoId?._id || a.labourMongoId) === labourFilter
+      : true;
+
+    let matchDate = true;
+    const recDate = new Date(a.date).toISOString().split('T')[0];
+
+    if (dateFilterMode === 'single') {
+      if (singleDateFilter) matchDate = recDate === singleDateFilter;
+    } else {
+      if (fromDateFilter && toDateFilter) {
+        matchDate = recDate >= fromDateFilter && recDate <= toDateFilter;
+      } else if (fromDateFilter) {
+        matchDate = recDate >= fromDateFilter;
+      } else if (toDateFilter) {
+        matchDate = recDate <= toDateFilter;
+      }
+    }
+
+    return matchLabour && matchDate;
   });
+
+  const hasDateFilter = dateFilterMode === 'single'
+    ? !!singleDateFilter
+    : !!(fromDateFilter || toDateFilter);
+  const hasAnyFilter = hasDateFilter || !!labourFilter;
 
   const totalHoursAll    = filteredAttendance.reduce((s, a) => s + (a.totalHours    || 0), 0);
   const totalOvertimeAll = filteredAttendance.reduce((s, a) => s + (a.overtimeHours || 0), 0);
   const totalSalaryAll   = filteredAttendance.reduce((s, a) => s + calcDaySalaryNum(a), 0);
   const selectedAttObj   = attendance.find(a => a._id === selectedAttId);
 
-  // ── Excel download ────────────────────────────────────────
   const handleExcelDownload = () => {
     if (!filteredAttendance.length) { showToast('No records to export', 'error'); return; }
     const rows = filteredAttendance.map(a => ({ ...a, daySalary: calcDaySalaryNum(a).toFixed(0) }));
-    const suffix = dateFilter ? `_${dateFilter}` : labourFilter ? `_labour` : '_all';
+    let suffix = '_all';
+    if (dateFilterMode === 'single' && singleDateFilter) suffix = `_${singleDateFilter}`;
+    else if (dateFilterMode === 'range' && fromDateFilter) suffix = `_${fromDateFilter}_to_${toDateFilter || 'now'}`;
+    else if (labourFilter) suffix = '_labour';
     exportToCSV(rows, `attendance${suffix}.csv`);
     showToast('CSV downloaded successfully!');
   };
 
-  // ── Preview helpers ───────────────────────────────────────
   const addHours       = calculateHours(addForm.startTime, addForm.endTime);
   const selectedLabour = getLabourByMongoId(addForm.labourMongoId);
   const estSalary      = selectedLabour?.dailyWage
@@ -329,7 +414,16 @@ function LabourAttendancePage({ onLogout }) {
   const multiHours = calculateHours(multiCommon.startTime, multiCommon.endTime);
   const multiReady = selectedLabourIds.length > 0 && commonDate && multiCommon.startTime && multiCommon.endTime;
 
-  const unselectedLabourOptions = labourOptions.filter(o => !selectedLabourIds.includes(o.value));
+  // Multiple mode: exclude already-selected AND already-marked-on-date labours
+  const unselectedLabourOptions = labours
+    .filter(l => !selectedLabourIds.includes(l._id))
+    .map(l => ({
+      value: l._id,
+      label: alreadyMarkedIds.has(l._id)
+        ? `${l.labourId} — ${l.name} (${l.workType || 'Worker'}) ✓ Already marked`
+        : `${l.labourId} — ${l.name} (${l.workType || 'Worker'})`,
+      disabled: alreadyMarkedIds.has(l._id),
+    }));
 
   return (
     <div className="entity-wrapper">
@@ -344,11 +438,42 @@ function LabourAttendancePage({ onLogout }) {
           </span>
         </div>
 
-        <div className="actions-row">
-          <button className="action-btn btn-add"    onClick={() => togglePanel(PANELS.ADD)}>Add Attendance</button>
-          <button className="action-btn btn-update" onClick={() => togglePanel(PANELS.UPDATE)}>Update Attendance</button>
-          <button className="action-btn btn-delete" onClick={() => togglePanel(PANELS.DELETE)}>Delete Attendance</button>
-          <button className="action-btn btn-getall" onClick={() => togglePanel(PANELS.GETALL)}>All Attendance</button>
+        <div className="action-cards-grid">
+          <div
+            className={`action-card action-card-add ${activePanel === PANELS.ADD ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.ADD)}
+          >
+            <div className="action-card-icon">➕</div>
+            <div className="action-card-title">Add Attendance</div>
+            <div className="action-card-desc">Record daily attendance</div>
+          </div>
+
+          <div
+            className={`action-card action-card-update ${activePanel === PANELS.UPDATE ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.UPDATE)}
+          >
+            <div className="action-card-icon">✏️</div>
+            <div className="action-card-title">Update Attendance</div>
+            <div className="action-card-desc">Edit attendance record</div>
+          </div>
+
+          <div
+            className={`action-card action-card-getall ${activePanel === PANELS.GETALL ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.GETALL)}
+          >
+            <div className="action-card-icon">📋</div>
+            <div className="action-card-title">All Attendance</div>
+            <div className="action-card-desc">View all attendance records</div>
+          </div>
+
+          <div
+            className={`action-card action-card-delete ${activePanel === PANELS.DELETE ? 'action-card-active' : ''}`}
+            onClick={() => togglePanel(PANELS.DELETE)}
+          >
+            <div className="action-card-icon">🗑️</div>
+            <div className="action-card-title">Delete Attendance</div>
+            <div className="action-card-desc">Remove attendance record</div>
+          </div>
         </div>
 
         {loading && <div className="loading-bar"><div className="loading-inner" /></div>}
@@ -365,14 +490,19 @@ function LabourAttendancePage({ onLogout }) {
                 onClick={() => setAddMode('multiple')}>👥 Multiple Labours</button>
             </div>
 
-            {/* Common Date */}
             <div className="att-common-date-bar">
               <div className="att-common-date-label">
                 <span className="att-common-date-icon">📅</span>
                 <span>Attendance Date</span>
               </div>
               <input className="field-input att-common-date-input" type="date"
-                value={commonDate} onChange={e => setCommonDate(e.target.value)} />
+                value={commonDate}
+                onChange={e => {
+                  setCommonDate(e.target.value);
+                  // Reset labour selection when date changes
+                  setAddForm(f => ({ ...f, labourMongoId: '' }));
+                  setSelectedLabourIds([]);
+                }} />
             </div>
 
             {/* ── SINGLE ── */}
@@ -384,13 +514,25 @@ function LabourAttendancePage({ onLogout }) {
                     <SearchableDropdown
                       options={labourOptions}
                       value={addForm.labourMongoId}
-                      onChange={val => setAddForm({ ...addForm, labourMongoId: val })}
+                      onChange={val => {
+                        if (!alreadyMarkedIds.has(val)) {
+                          setAddForm({ ...addForm, labourMongoId: val });
+                        } else {
+                          showToast('Attendance already marked for this labour on selected date', 'error');
+                        }
+                      }}
                       placeholder="-- Select Labour --"
                     />
+                    {/* Info text showing how many are already marked */}
+                    {alreadyMarkedIds.size > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 4, display: 'block' }}>
+                        ✓ {alreadyMarkedIds.size} labour{alreadyMarkedIds.size > 1 ? 's' : ''} already marked on this date
+                      </span>
+                    )}
                   </div>
                   <div className="form-field">
-                    <label className="field-label">Site Name</label>
-                    <input className="field-input" type="text" placeholder="e.g. Site A, Block-2"
+                    <label className="field-label">Site Name <span style={{ color: 'var(--color-text-secondary)', fontSize: 11 }}>(optional)</span></label>
+                    <input className="field-input" type="text" placeholder="e.g. Site A, Block-2 (or leave blank)"
                       value={addForm.siteName}
                       onChange={e => setAddForm({ ...addForm, siteName: e.target.value })} />
                   </div>
@@ -440,8 +582,8 @@ function LabourAttendancePage({ onLogout }) {
                   </div>
                   <div className="form-row att-form-grid-3">
                     <div className="form-field">
-                      <label className="field-label">Site Name</label>
-                      <input className="field-input" type="text" placeholder="e.g. Site A, Block-2"
+                      <label className="field-label">Site Name <span style={{ color: 'var(--color-text-secondary)', fontSize: 11 }}>(optional)</span></label>
+                      <input className="field-input" type="text" placeholder="e.g. Site A, Block-2 (or leave blank)"
                         value={multiCommon.siteName}
                         onChange={e => setMultiCommon({ ...multiCommon, siteName: e.target.value })} />
                     </div>
@@ -470,17 +612,26 @@ function LabourAttendancePage({ onLogout }) {
                 <div className="multi-labour-select-section">
                   <div className="multi-labour-select-header">
                     <span className="multi-labour-select-title">👷 Select Labours</span>
-                    <span className="multi-labour-count-badge">
-                      {selectedLabourIds.length} selected
-                    </span>
+                    <span className="multi-labour-count-badge">{selectedLabourIds.length} selected</span>
+                    {/* Show how many already marked on this date */}
+                    {alreadyMarkedIds.size > 0 && (
+                      <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginLeft: 8 }}>
+                        ({alreadyMarkedIds.size} already marked on this date — hidden from list)
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-field" style={{ marginBottom: 12 }}>
                     <SearchableDropdown
                       options={unselectedLabourOptions}
                       value=""
-                      onChange={(val) => { if (val) toggleLabourSelection(val); }}
-                      placeholder={unselectedLabourOptions.length === 0 ? '✓ All labours selected' : '-- Search & add labour --'}
+                      onChange={(val) => {
+                        if (val && !alreadyMarkedIds.has(val)) toggleLabourSelection(val);
+                        else if (val) showToast('Attendance already marked for this labour on selected date', 'error');
+                      }}
+                      placeholder={unselectedLabourOptions.filter(o => !o.disabled).length === 0
+                        ? '✓ All available labours selected'
+                        : '-- Search & add labour --'}
                     />
                   </div>
 
@@ -494,9 +645,7 @@ function LabourAttendancePage({ onLogout }) {
                         return (
                           <div className="multi-selected-labour-chip" key={id}>
                             <div className="multi-chip-left">
-                              <span className="multi-chip-avatar">
-                                {lab.name.charAt(0).toUpperCase()}
-                              </span>
+                              <span className="multi-chip-avatar">{lab.name.charAt(0).toUpperCase()}</span>
                               <div className="multi-chip-info">
                                 <span className="multi-chip-name">{lab.name}</span>
                                 <span className="multi-chip-meta">
@@ -505,12 +654,8 @@ function LabourAttendancePage({ onLogout }) {
                                 </span>
                               </div>
                             </div>
-                            <button
-                              className="multi-chip-remove"
-                              type="button"
-                              onClick={() => removeSelectedLabour(id)}
-                              title="Remove"
-                            >✕</button>
+                            <button className="multi-chip-remove" type="button"
+                              onClick={() => removeSelectedLabour(id)} title="Remove">✕</button>
                           </div>
                         );
                       })}
@@ -541,12 +686,8 @@ function LabourAttendancePage({ onLogout }) {
                       </span>
                     )}
                   </div>
-                  <button
-                    className="submit-btn"
-                    type="button"
-                    onClick={handleAddMultiple}
-                    disabled={loading || !multiReady}
-                  >
+                  <button className="submit-btn" type="button"
+                    onClick={handleAddMultiple} disabled={loading || !multiReady}>
                     Save All ({selectedLabourIds.length})
                   </button>
                 </div>
@@ -577,8 +718,8 @@ function LabourAttendancePage({ onLogout }) {
                 <form onSubmit={handleUpdate}>
                   <div className="form-row att-form-grid-4">
                     <div className="form-field">
-                      <label className="field-label">Site Name</label>
-                      <input className="field-input" type="text" placeholder="Site"
+                      <label className="field-label">Site Name <span style={{ color: 'var(--color-text-secondary)', fontSize: 11 }}>(optional)</span></label>
+                      <input className="field-input" type="text" placeholder="Site (or leave blank)"
                         value={updateForm.siteName}
                         onChange={e => setUpdateForm({ ...updateForm, siteName: e.target.value })} />
                     </div>
@@ -675,36 +816,124 @@ function LabourAttendancePage({ onLogout }) {
               </div>
             </div>
 
-            <div className="att-filter-row-extended">
-              <div className="form-field">
-                <label className="field-label">Filter by Date</label>
-                <input className="field-input" type="date" value={dateFilter}
-                  onChange={e => { setDateFilter(e.target.value); setSelectedAttId(''); }} />
+            <div className="att-filter-block">
+              <div className="att-filter-row-top">
+                <div className="att-date-filter-wrap">
+                  <label className="field-label" style={{ marginBottom: 8 }}>Filter by Date</label>
+                  <div className="att-date-mode-toggle">
+                    <button
+                      className={`att-date-mode-btn ${dateFilterMode === 'single' ? 'att-date-mode-active' : ''}`}
+                      onClick={() => { setDateFilterMode('single'); clearDateFilters(); }}
+                      type="button">
+                      📅 Single Date
+                    </button>
+                    <button
+                      className={`att-date-mode-btn ${dateFilterMode === 'range' ? 'att-date-mode-active' : ''}`}
+                      onClick={() => { setDateFilterMode('range'); clearDateFilters(); }}
+                      type="button">
+                      📆 Date Range
+                    </button>
+                  </div>
+
+                  {dateFilterMode === 'single' && (
+                    <div className="att-date-single-input">
+                      <input className="field-input" type="date" value={singleDateFilter}
+                        onChange={e => { setSingleDateFilter(e.target.value); setSelectedAttId(''); }} />
+                      {singleDateFilter && (
+                        <button className="att-date-clear-x" onClick={() => { setSingleDateFilter(''); setSelectedAttId(''); }} type="button">✕</button>
+                      )}
+                    </div>
+                  )}
+
+                  {dateFilterMode === 'range' && (
+                    <div className="att-date-range-inputs">
+                      <div className="att-date-range-field">
+                        <label className="att-range-label">From</label>
+                        <div className="att-date-single-input">
+                          <input className="field-input" type="date" value={fromDateFilter}
+                            onChange={e => { setFromDateFilter(e.target.value); setSelectedAttId(''); }} />
+                          {fromDateFilter && (
+                            <button className="att-date-clear-x" onClick={() => { setFromDateFilter(''); setSelectedAttId(''); }} type="button">✕</button>
+                          )}
+                        </div>
+                      </div>
+                      <span className="att-range-arrow">→</span>
+                      <div className="att-date-range-field">
+                        <label className="att-range-label">To</label>
+                        <div className="att-date-single-input">
+                          <input className="field-input" type="date" value={toDateFilter}
+                            min={fromDateFilter || undefined}
+                            onChange={e => { setToDateFilter(e.target.value); setSelectedAttId(''); }} />
+                          {toDateFilter && (
+                            <button className="att-date-clear-x" onClick={() => { setToDateFilter(''); setSelectedAttId(''); }} type="button">✕</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="att-labour-filter-wrap">
+                  <label className="field-label" style={{ marginBottom: 8 }}>Filter by Labour</label>
+                  <SearchableDropdown
+                    options={labourOptionsForFilter}
+                    value={labourFilter}
+                    onChange={(val) => { setLabourFilter(val); setSelectedAttId(''); }}
+                    placeholder="-- All Labours --"
+                  />
+                  {labourFilter && (
+                    <button className="att-clear-btn" style={{ marginTop: 8 }}
+                      onClick={() => { setLabourFilter(''); setSelectedAttId(''); }}>
+                      ✕ Clear Labour
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="form-field">
-                <label className="field-label">Filter by Labour</label>
-                <SearchableDropdown
-                  options={labourOptions}
-                  value={labourFilter}
-                  onChange={(val) => { setLabourFilter(val); setSelectedAttId(''); }}
-                  placeholder="-- All Labours --"
-                />
-              </div>
-              <div className="att-filter-actions">
-                {(dateFilter || labourFilter) && (
-                  <button className="att-clear-btn"
-                    onClick={() => { setDateFilter(''); setLabourFilter(''); setSelectedAttId(''); }}>
-                    ✕ Clear
+
+              <div className="att-filter-row-bottom">
+                <div className="att-active-filters">
+                  {dateFilterMode === 'single' && singleDateFilter && (
+                    <span className="att-filter-tag">
+                      📅 {new Date(singleDateFilter).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}
+                      <button onClick={() => { setSingleDateFilter(''); setSelectedAttId(''); }}>✕</button>
+                    </span>
+                  )}
+                  {dateFilterMode === 'range' && (fromDateFilter || toDateFilter) && (
+                    <span className="att-filter-tag att-filter-tag-range">
+                      📆{' '}
+                      {fromDateFilter ? new Date(fromDateFilter).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '…'}
+                      {' → '}
+                      {toDateFilter ? new Date(toDateFilter).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) : '…'}
+                      <button onClick={() => { setFromDateFilter(''); setToDateFilter(''); setSelectedAttId(''); }}>✕</button>
+                    </span>
+                  )}
+                  {labourFilter && (() => {
+                    const lab = labours.find(l => l._id === labourFilter);
+                    return (
+                      <span className="att-filter-tag att-filter-tag-labour">
+                        👷 {lab?.name || 'Labour'}
+                        <button onClick={() => { setLabourFilter(''); setSelectedAttId(''); }}>✕</button>
+                      </span>
+                    );
+                  })()}
+                  {!hasAnyFilter && (
+                    <span className="att-no-filter-hint">No filters active — showing all {attendance.length} records</span>
+                  )}
+                </div>
+
+                <div className="att-filter-actions">
+                  {hasAnyFilter && (
+                    <button className="att-clear-btn" onClick={clearAllFilters}>✕ Clear All</button>
+                  )}
+                  <button className="att-excel-btn" onClick={handleExcelDownload} disabled={!filteredAttendance.length}>
+                    ⬇ CSV ({filteredAttendance.length})
                   </button>
-                )}
-                <button className="att-excel-btn" onClick={handleExcelDownload} disabled={!filteredAttendance.length}>
-                  ⬇ CSV
-                </button>
+                </div>
               </div>
             </div>
 
             {filteredAttendance.length === 0 ? (
-              <div className="empty-state"><div className="empty-icon">📭</div><p>No attendance records found.</p></div>
+              <div className="empty-state"><div className="empty-icon">📭</div><p>No attendance records match the filter.</p></div>
             ) : (
               <>
                 {selectedAttObj && (
@@ -714,7 +943,9 @@ function LabourAttendancePage({ onLogout }) {
                         <span className="att-id-tag">{selectedAttObj.labourId || '—'}</span>
                         <span style={{ fontWeight: 700, fontSize: 16 }}>{selectedAttObj.labourName}</span>
                         <span className="att-date-tag">{new Date(selectedAttObj.date).toLocaleDateString('en-IN')}</span>
-                        {selectedAttObj.siteName && <span className="att-site-tag">📍 {selectedAttObj.siteName}</span>}
+                        {selectedAttObj.siteName && selectedAttObj.siteName !== 'N/A' && (
+                          <span className="att-site-tag">📍 {selectedAttObj.siteName}</span>
+                        )}
                       </div>
                       <button className="inv-detail-close" onClick={() => setSelectedAttId('')}>✕</button>
                     </div>
@@ -723,7 +954,7 @@ function LabourAttendancePage({ onLogout }) {
                         ['Labour ID',   selectedAttObj.labourId    || '—'],
                         ['Name',        selectedAttObj.labourName  || '—'],
                         ['Work Type',   selectedAttObj.workType    || '—'],
-                        ['Site',        selectedAttObj.siteName    || '—'],
+                        ['Site',        (selectedAttObj.siteName && selectedAttObj.siteName !== 'N/A') ? selectedAttObj.siteName : '—'],
                         ['Date',        new Date(selectedAttObj.date).toLocaleDateString('en-IN')],
                         ['Start Time',  selectedAttObj.startTime],
                         ['End Time',    selectedAttObj.endTime],
@@ -752,6 +983,7 @@ function LabourAttendancePage({ onLogout }) {
                     <tbody>
                       {filteredAttendance.map(a => {
                         const isSelected = selectedAttId === a._id;
+                        const displaySite = (a.siteName && a.siteName !== 'N/A') ? a.siteName : null;
                         return (
                           <tr key={a._id}
                             className={isSelected ? 'att-row-selected' : ''}
@@ -761,7 +993,7 @@ function LabourAttendancePage({ onLogout }) {
                             <td><span className="att-id-tag">{a.labourId || '—'}</span></td>
                             <td style={{ fontWeight: 600 }}>{a.labourName || '—'}</td>
                             <td>{a.workType || '—'}</td>
-                            <td>{a.siteName ? <span className="att-site-tag-sm">📍 {a.siteName}</span> : '—'}</td>
+                            <td>{displaySite ? <span className="att-site-tag-sm">📍 {displaySite}</span> : '—'}</td>
                             <td>{a.startTime}</td>
                             <td>{a.endTime}</td>
                             <td className="amt-cell">{a.totalHours} hrs</td>

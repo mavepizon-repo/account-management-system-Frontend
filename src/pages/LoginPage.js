@@ -32,8 +32,7 @@ function LoginPage({ onLogin }) {
 
       <div className="login-card">
         <div className="login-logo">
-          <div className="login-logo-icon">🏗️</div>
-          <div className="login-logo-text"><b>Account Managements</b></div>
+          <div className="login-logo-text"><b>Design</b><span>Art</span></div>
         </div>
 
         <h1 className="login-title">Welcome Back 👋</h1>
@@ -46,7 +45,6 @@ function LoginPage({ onLogin }) {
               <input
                 type="text"
                 className="form-input"
-                // placeholder="admin"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 autoComplete="username"
@@ -61,7 +59,6 @@ function LoginPage({ onLogin }) {
               <input
                 type={showPass ? 'text' : 'password'}
                 className="form-input"
-                // placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 autoComplete="current-password"
@@ -84,11 +81,9 @@ function LoginPage({ onLogin }) {
           )}
 
           <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? '⏳ Signing in...' : ' Sign In'}
+            {loading ? '⏳ Signing in...' : 'Sign In'}
           </button>
         </form>
-
-       
       </div>
     </div>
   );

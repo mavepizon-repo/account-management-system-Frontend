@@ -49,20 +49,16 @@ function LabourPage({ onLogout }) {
 
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
 
-  // ✅ Phone number validation function
-  const validatePhone = (phone) => {
-    const phoneStr = phone.toString().trim();
-    return /^\d{10}$/.test(phoneStr);
-  };
+  // Phone validation — exactly 10 digits
+  const validatePhone = (phone) => /^\d{10}$/.test(phone.toString().trim());
 
-  // ✅ Handle phone input - only allow numbers and max 10 digits
+  // Phone input handler — strips non-digits, caps at 10
   const handlePhoneInput = (value, setter, formKey) => {
     const numericValue = value.replace(/\D/g, '').slice(0, 10);
     setter(prev => ({ ...prev, [formKey]: numericValue }));
   };
 
-  // ── Fetch labours ─────────────────────────────────────────
-  // ✅ Wrapped in useCallback to fix the warning
+  // ── Fetch labours ──────────────────────────────────────────
   const fetchLabours = useCallback(async () => {
     try {
       setLoading(true);
@@ -74,16 +70,16 @@ function LabourPage({ onLogout }) {
     } finally {
       setLoading(false);
     }
-  }, [showToast]); // ✅ showToast is already memoized with useCallback
+  }, [showToast]);
 
-  useEffect(() => { fetchLabours(); }, [fetchLabours]); // ✅ Now includes fetchLabours in dependency array
+  useEffect(() => { fetchLabours(); }, [fetchLabours]);
 
   const labourOptions = labours.map(l => ({
     value: l._id,
     label: `${l.labourId} — ${l.name} (${l.workType || 'Worker'})`,
   }));
 
-  // ── Toggle panel ──────────────────────────────────────────
+  // ── Toggle panel ───────────────────────────────────────────
   const togglePanel = (panel) => {
     setPanel(prev => prev === panel ? null : panel);
     setShowReport(false);
@@ -101,14 +97,13 @@ function LabourPage({ onLogout }) {
     setReportMonth(new Date().toISOString().slice(0, 7));
   };
 
-  // ── ADD ───────────────────────────────────────────────────
+  // ── ADD ────────────────────────────────────────────────────
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!addForm.name || !addForm.dailyWage || !addForm.phone || !addForm.address || !addForm.workType) {
-      showToast('Name, Phone, Address, Work Type and Daily Wage are required', 'error'); 
+      showToast('Name, Phone, Address, Work Type and Daily Wage are required', 'error');
       return;
     }
-    // ✅ Validate phone number
     if (!validatePhone(addForm.phone)) {
       showToast('Phone number must be exactly 10 digits', 'error');
       return;
@@ -139,7 +134,7 @@ function LabourPage({ onLogout }) {
     finally { setLoading(false); }
   };
 
-  // ── UPDATE ────────────────────────────────────────────────
+  // ── UPDATE ─────────────────────────────────────────────────
   const handleUpdateSelect = (labourMongoId) => {
     setUpdateLabourId(labourMongoId);
     const found = labours.find(l => l._id === labourMongoId);
@@ -162,7 +157,6 @@ function LabourPage({ onLogout }) {
   const handleUpdate = async (e) => {
     e.preventDefault();
     if (!updateFound) { showToast('Please select a labour', 'error'); return; }
-    // ✅ Validate phone number
     if (!validatePhone(updateForm.phone)) {
       showToast('Phone number must be exactly 10 digits', 'error');
       return;
@@ -181,17 +175,20 @@ function LabourPage({ onLogout }) {
           description: updateForm.description,
         }),
       });
+      const data = await res.json();
       if (res.ok) {
         await fetchLabours();
         showToast(`${updateForm.name} updated successfully!`);
         setUpdateFound(null); setUpdateLabourId('');
         setUpdateForm({ name: '', workType: '', phone: '', address: '', dailyWage: '', description: '' });
-      } else { showToast('Failed to update labour', 'error'); }
+      } else {
+        showToast(data.message || 'Failed to update labour', 'error');
+      }
     } catch { showToast('Error updating labour', 'error'); }
     finally { setLoading(false); }
   };
 
-  // ── DELETE ────────────────────────────────────────────────
+  // ── DELETE ─────────────────────────────────────────────────
   const handleDeleteSelect = (labourMongoId) => {
     setDeleteLabourId(labourMongoId);
     setDeleteFound(labours.find(l => l._id === labourMongoId) || null);
@@ -206,12 +203,16 @@ function LabourPage({ onLogout }) {
         await fetchLabours();
         showToast(`${deleteFound.name} deleted successfully!`, 'info');
         setDeleteFound(null); setDeleteLabourId('');
-      } else { showToast('Failed to delete labour', 'error'); }
+      } else {
+        // FIX: Read backend error message (e.g. "Cannot delete labour with attendance records")
+        const data = await res.json();
+        showToast(data.message || 'Failed to delete labour', 'error');
+      }
     } catch { showToast('Error deleting labour', 'error'); }
     finally { setLoading(false); }
   };
 
-  // ── Inline edit (GETALL table) ────────────────────────────
+  // ── Inline edit (GETALL table) ─────────────────────────────
   const startInlineEdit = (labour) => {
     setInlineEditId(labour._id);
     setInlineForm({
@@ -234,7 +235,6 @@ function LabourPage({ onLogout }) {
     if (!inlineForm.name || !inlineForm.dailyWage) {
       showToast('Name and Daily Wage are required', 'error'); return;
     }
-    // ✅ Validate phone number
     if (!validatePhone(inlineForm.phone)) {
       showToast('Phone number must be exactly 10 digits', 'error');
       return;
@@ -253,17 +253,20 @@ function LabourPage({ onLogout }) {
           description: inlineForm.description,
         }),
       });
+      const data = await res.json();
       if (res.ok) {
         await fetchLabours();
         showToast(`${inlineForm.name} updated successfully!`);
         setInlineEditId(null);
         setInlineForm({ name: '', workType: '', phone: '', address: '', dailyWage: '', description: '' });
+      } else {
+        showToast(data.message || 'Failed to update labour', 'error');
       }
     } catch { showToast('Error updating labour', 'error'); }
     finally { setLoading(false); }
   };
 
-  // ── Monthly Report ────────────────────────────────────────
+  // ── Monthly Report ─────────────────────────────────────────
   const handleLabourMonthlyReport = async () => {
     if (!reportLabourId || !reportMonth) {
       showToast('Please select labour and month', 'error'); return;
@@ -281,7 +284,7 @@ function LabourPage({ onLogout }) {
     finally { setReportLoading(false); }
   };
 
-  // ── Excel Download ─────────────────────────────────────────
+  // ── Excel Download ──────────────────────────────────────────
   const handleExcelDownload = async () => {
     if (!reportLabourId || !reportMonth) {
       showToast('Please select labour and month first', 'error'); return;
@@ -301,8 +304,8 @@ function LabourPage({ onLogout }) {
     } catch { showToast('Error downloading Excel', 'error'); }
   };
 
-  const selectedLabourObj  = labours.find(l => l._id === selectedLabourId);
-  const reportLabourObj    = labours.find(l => l._id === reportLabourId);
+  const selectedLabourObj = labours.find(l => l._id === selectedLabourId);
+  const reportLabourObj   = labours.find(l => l._id === reportLabourId);
 
   return (
     <div className="entity-wrapper">
@@ -317,15 +320,70 @@ function LabourPage({ onLogout }) {
           </span>
         </div>
 
-        <div className="actions-row">
-          <button className="action-btn btn-add"    onClick={() => togglePanel(PANELS.ADD)}>Add Labour</button>
-          <button className="action-btn btn-update" onClick={() => togglePanel(PANELS.UPDATE)}>Update Labour</button>
-          <button className="action-btn btn-delete" onClick={() => togglePanel(PANELS.DELETE)}>Delete Labour</button>
-          <button className="action-btn btn-getall" onClick={() => togglePanel(PANELS.GETALL)}>Get All Labours</button>
-          <button className="action-btn labour-btn-attendance" onClick={() => navigate('/labour-attendance')}>Labour Attendance</button>
-          <button className="action-btn labour-btn-advance" onClick={() => navigate('/advance-payment')}>Advance Payment</button>
-          <button className="action-btn labour-btn-report" onClick={toggleReport}>Monthly Report</button>
-        </div>
+        <div className="action-cards-grid">
+  <div
+    className={`action-card action-card-add ${activePanel === PANELS.ADD ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.ADD)}
+  >
+    <div className="action-card-icon">➕</div>
+    <div className="action-card-title">Add Labour</div>
+    <div className="action-card-desc">Add a new labour record</div>
+  </div>
+
+  <div
+    className={`action-card action-card-update ${activePanel === PANELS.UPDATE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.UPDATE)}
+  >
+    <div className="action-card-icon">✏️</div>
+    <div className="action-card-title">Update Labour</div>
+    <div className="action-card-desc">Edit existing labour info</div>
+  </div>
+
+  <div
+    className={`action-card action-card-getall ${activePanel === PANELS.GETALL ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.GETALL)}
+  >
+    <div className="action-card-icon">📋</div>
+    <div className="action-card-title">Get All Labours</div>
+    <div className="action-card-desc">View all labour records</div>
+  </div>
+
+   <div
+    className={`action-card action-card-delete ${activePanel === PANELS.DELETE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.DELETE)}
+  >
+    <div className="action-card-icon">🗑️</div>
+    <div className="action-card-title">Delete Labour</div>
+    <div className="action-card-desc">Remove a labour record</div>
+  </div>
+
+  <div
+    className="action-card action-card-attendance"
+    onClick={() => navigate('/labour-attendance')}
+  >
+    <div className="action-card-icon">🕐</div>
+    <div className="action-card-title">Labour Attendance</div>
+    <div className="action-card-desc">Manage daily attendance</div>
+  </div>
+
+  <div
+    className="action-card action-card-advance"
+    onClick={() => navigate('/advance-payment')}
+  >
+    <div className="action-card-icon">💰</div>
+    <div className="action-card-title">Advance Payment</div>
+    <div className="action-card-desc">Track advance payments</div>
+  </div>
+
+  <div
+    className={`action-card action-card-report ${showReport ? 'action-card-active' : ''}`}
+    onClick={toggleReport}
+  >
+    <div className="action-card-icon">📊</div>
+    <div className="action-card-title">Monthly Report</div>
+    <div className="action-card-desc">Generate attendance report</div>
+  </div>
+</div>
 
         {loading && <div className="loading-bar"><div className="loading-inner" /></div>}
 
@@ -347,10 +405,10 @@ function LabourPage({ onLogout }) {
                 </div>
                 <div className="form-field">
                   <label className="field-label">Phone * (10 digits)</label>
-                  <input 
-                    className="field-input" 
+                  <input
+                    className="field-input"
                     placeholder="10-digit phone number"
-                    value={addForm.phone} 
+                    value={addForm.phone}
                     onChange={e => handlePhoneInput(e.target.value, setAddForm, 'phone')}
                     maxLength={10}
                     type="tel"
@@ -432,8 +490,8 @@ function LabourPage({ onLogout }) {
                     </div>
                     <div className="form-field">
                       <label className="field-label">Phone * (10 digits)</label>
-                      <input 
-                        className="field-input" 
+                      <input
+                        className="field-input"
                         value={updateForm.phone}
                         onChange={e => handlePhoneInput(e.target.value, setUpdateForm, 'phone')}
                         maxLength={10}
@@ -487,13 +545,13 @@ function LabourPage({ onLogout }) {
             {deleteFound && (
               <div className="detail-card" style={{ marginTop: 20 }}>
                 {[
-                  ['Labour ID',  deleteFound.labourId],
-                  ['Name',       deleteFound.name],
-                  ['Work Type',  deleteFound.workType  || '—'],
-                  ['Phone',      deleteFound.phone     || '—'],
-                  ['Address',    deleteFound.address   || '—'],
-                  ['Daily Wage', `₹${Number(deleteFound.dailyWage).toLocaleString('en-IN')}`],
-                  ['Description',deleteFound.description || '—'],
+                  ['Labour ID',   deleteFound.labourId],
+                  ['Name',        deleteFound.name],
+                  ['Work Type',   deleteFound.workType   || '—'],
+                  ['Phone',       deleteFound.phone      || '—'],
+                  ['Address',     deleteFound.address    || '—'],
+                  ['Daily Wage',  `₹${Number(deleteFound.dailyWage).toLocaleString('en-IN')}`],
+                  ['Description', deleteFound.description || '—'],
                 ].map(([k, v]) => (
                   <div className="detail-row" key={k}>
                     <span className="detail-key">{k}</span>
@@ -576,8 +634,8 @@ function LabourPage({ onLogout }) {
                             <td><input className="inline-edit-input" value={inlineForm.workType}
                               onChange={e => setInlineForm({ ...inlineForm, workType: e.target.value })} /></td>
                             <td>
-                              <input 
-                                className="inline-edit-input" 
+                              <input
+                                className="inline-edit-input"
                                 value={inlineForm.phone}
                                 onChange={e => handlePhoneInput(e.target.value, setInlineForm, 'phone')}
                                 maxLength={10}
@@ -668,12 +726,13 @@ function LabourPage({ onLogout }) {
                     </div>
                   )}
 
+                  {/* FIX: Added ?? fallbacks for all summary fields */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, margin: '14px 0' }}>
                     {[
-                      ['Total Days',    reportData.summary?.totalDays,                          '#fff4f7', '#c93360', '#ffc8d4'],
-                      ['Total Hours',   `${reportData.summary?.totalHours} hrs`,                '#eef1ff', 'var(--primary)', '#c8d4ff'],
-                      ['Overtime',      `${reportData.summary?.totalOvertime} hrs`,             '#fffbe8', '#7a5000', '#ffe08a'],
-                      ['Total Salary',  `₹${Number(reportData.summary?.totalSalary||0).toLocaleString('en-IN')}`, '#e6fdf6', '#04a87f', '#a0f0d8'],
+                      ['Total Days',   reportData.summary?.totalDays    ?? '—',                                     '#fff4f7', '#c93360', '#ffc8d4'],
+                      ['Total Hours',  `${reportData.summary?.totalHours    ?? 0} hrs`,                             '#eef1ff', 'var(--primary)', '#c8d4ff'],
+                      ['Overtime',     `${reportData.summary?.totalOvertime ?? 0} hrs`,                             '#fffbe8', '#7a5000', '#ffe08a'],
+                      ['Total Salary', `₹${Number(reportData.summary?.totalSalary ?? 0).toLocaleString('en-IN')}`, '#e6fdf6', '#04a87f', '#a0f0d8'],
                     ].map(([label, val, bg, color, border]) => (
                       <div key={label} style={{ background: bg, border: `1.5px solid ${border}`, color, borderRadius: 10, padding: '14px 16px' }}>
                         <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', opacity: 0.75, marginBottom: 4 }}>{label}</div>

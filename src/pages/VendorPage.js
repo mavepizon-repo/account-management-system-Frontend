@@ -9,9 +9,9 @@ import '../styles/SearchableDropdown.css';
 
 const API_BASE_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 const PANELS = { ADD: 'add', UPDATE: 'update', DELETE: 'delete', GETALL: 'getall' };
+
 const emptyForm = { name: '', phone: '', address: '', gstNo: '' };
 
-// ── Company Info ─────────────────────────────────────────
 const COMPANY = {
   name:    'DESIGN ART (INTERIOR & EXTERIOR SOLUTION)',
   address: '5-6, Indria Nagar, PM Samy Colony, Ratinapuri, Gandhipuram, Coimbatore 641012',
@@ -155,13 +155,24 @@ function VendorPage({ onLogout }) {
     });
 
   const getVendorStats = (vendorId) => {
-    const bills      = getVendorPurchases(vendorId);
-    const totalNet   = bills.reduce((s, b) => s + (b.grandTotal  || 0), 0);
-    const totalPaid  = bills.reduce((s, b) => s + (b.paidAmount  || 0), 0);
-    const totalGST   = bills.reduce((s, b) => s + (b.totalGST    || 0), 0);
-    const totalBase  = bills.reduce((s, b) => s + (b.totalAmount || 0), 0);
-    return { count: bills.length, totalNet, totalPaid, totalGST, totalBase, outstanding: totalNet - totalPaid, bills };
+    const bills     = getVendorPurchases(vendorId);
+    const totalNet  = bills.reduce((s, b) => s + (b.grandTotal            || 0), 0);
+    const totalPaid = bills.reduce((s, b) => s + (b.cumulativePaidAmount  || 0), 0);
+    const totalGST  = bills.reduce((s, b) => s + (b.totalGST              || 0), 0);
+    const totalBase = bills.reduce((s, b) => s + (b.totalAmount           || 0), 0);
+    return {
+      count: bills.length,
+      totalNet,
+      totalPaid,
+      totalGST,
+      totalBase,
+      outstanding: totalNet - totalPaid,
+      bills,
+    };
   };
+
+  // ── Helper: get GST from vendor object (handles both field names) ──
+  const getGst = (vendor) => vendor?.gstNo || vendor?.gstNumber || '';
 
   const vendorOptions = vendors.map(v => ({
     value: v._id,
@@ -184,12 +195,23 @@ function VendorPage({ onLogout }) {
     try {
       setLoading(true);
       const res  = await fetch(`${API_BASE_URL}/vendor/add`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(addForm),
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:    addForm.name,
+          phone:   addForm.phone,
+          address: addForm.address,
+          gstNo:   addForm.gstNo,
+        }),
       });
       const data = await res.json();
-      if (res.ok) { await fetchVendors(); setAddForm(emptyForm); showToast(`${data.name} added successfully!`); }
-      else showToast(data.message || 'Failed to add vendor', 'error');
+      if (res.ok) {
+        await fetchVendors();
+        setAddForm(emptyForm);
+        showToast(`${data.data?.name || addForm.name} added successfully!`);
+      } else {
+        showToast(data.message || 'Failed to add vendor', 'error');
+      }
     } catch { showToast('Error adding vendor', 'error'); }
     finally  { setLoading(false); }
   };
@@ -200,7 +222,12 @@ function VendorPage({ onLogout }) {
     const found = vendors.find(v => v._id === vendorId);
     if (found) {
       setUpdateFound(found);
-      setUpdateForm({ name: found.name, phone: found.phone || '', address: found.address || '', gstNo: found.gstNo || '' });
+      setUpdateForm({
+        name:    found.name    || '',
+        phone:   found.phone   || '',
+        address: found.address || '',
+        gstNo:   getGst(found),  // ✅ reads gstNo OR gstNumber
+      });
     } else { setUpdateFound(null); setUpdateForm(emptyForm); }
   };
 
@@ -210,13 +237,23 @@ function VendorPage({ onLogout }) {
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/vendor/edit/${updateFound._id}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updateForm),
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:    updateForm.name,
+          phone:   updateForm.phone,
+          address: updateForm.address,
+          gstNo:   updateForm.gstNo,  // ✅ send as gstNo to match controller
+        }),
       });
       if (res.ok) {
-        await fetchVendors(); showToast(`${updateForm.name} updated successfully!`);
+        await fetchVendors();
+        showToast(`${updateForm.name} updated successfully!`);
         setUpdateFound(null); setUpdateVendorId(''); setUpdateForm(emptyForm);
-      } else showToast('Failed to update vendor', 'error');
+      } else {
+        const data = await res.json();
+        showToast(data.message || 'Failed to update vendor', 'error');
+      }
     } catch { showToast('Error updating vendor', 'error'); }
     finally  { setLoading(false); }
   };
@@ -233,9 +270,13 @@ function VendorPage({ onLogout }) {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/vendor/delete/${deleteFound._id}`, { method: 'DELETE' });
       if (res.ok) {
-        await fetchVendors(); showToast(`${deleteFound.name} deleted successfully!`, 'info');
+        await fetchVendors();
+        showToast(`${deleteFound.name} deleted successfully!`, 'info');
         setDeleteFound(null); setDeleteVendorId('');
-      } else showToast('Failed to delete vendor', 'error');
+      } else {
+        const data = await res.json();
+        showToast(data.message || 'Failed to delete vendor', 'error');
+      }
     } catch { showToast('Error deleting vendor', 'error'); }
     finally  { setLoading(false); }
   };
@@ -243,7 +284,12 @@ function VendorPage({ onLogout }) {
   // ── Inline edit ──────────────────────────────────────────
   const startInlineEdit = (vendor) => {
     setInlineEditId(vendor._id);
-    setInlineEditForm({ name: vendor.name, phone: vendor.phone || '', address: vendor.address || '', gstNo: vendor.gstNo || '' });
+    setInlineEditForm({
+      name:    vendor.name    || '',
+      phone:   vendor.phone   || '',
+      address: vendor.address || '',
+      gstNo:   getGst(vendor),  // ✅ reads gstNo OR gstNumber
+    });
     setSelectedVendor('');
   };
   const cancelInlineEdit = () => { setInlineEditId(null); setInlineEditForm(emptyForm); };
@@ -253,12 +299,22 @@ function VendorPage({ onLogout }) {
     try {
       setLoading(true);
       const res = await fetch(`${API_BASE_URL}/vendor/edit/${vendorId}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(inlineEditForm),
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:    inlineEditForm.name,
+          phone:   inlineEditForm.phone,
+          address: inlineEditForm.address,
+          gstNo:   inlineEditForm.gstNo,  // ✅ send as gstNo to match controller
+        }),
       });
       if (res.ok) {
-        await fetchVendors(); showToast(`${inlineEditForm.name} updated successfully!`);
+        await fetchVendors();
+        showToast(`${inlineEditForm.name} updated successfully!`);
         setInlineEditId(null); setInlineEditForm(emptyForm);
+      } else {
+        const data = await res.json();
+        showToast(data.message || 'Error updating vendor', 'error');
       }
     } catch { showToast('Error updating vendor', 'error'); }
     finally  { setLoading(false); }
@@ -273,7 +329,7 @@ function VendorPage({ onLogout }) {
         v.name.toLowerCase().includes(q) ||
         (v.vendorCode || '').toLowerCase().includes(q) ||
         (v.phone || '').includes(q) ||
-        (v.gstNo || '').toLowerCase().includes(q)
+        (getGst(v) || '').toLowerCase().includes(q)  // ✅ search by gstNo too
       );
     }
     if (outstandingOnly) list = list.filter(v => v._stats.outstanding > 0);
@@ -287,8 +343,8 @@ function VendorPage({ onLogout }) {
   }, [vendors, purchases, searchText, outstandingOnly, sortBy]);
 
   const totalOutstanding = vendors.reduce((s, v) => s + getVendorStats(v._id).outstanding, 0);
-  const totalPaid        = purchases.reduce((s, b) => s + (b.paidAmount  || 0), 0);
-  const totalNet         = purchases.reduce((s, b) => s + (b.grandTotal  || 0), 0);
+  const totalPaid        = purchases.reduce((s, b) => s + (b.cumulativePaidAmount || 0), 0);
+  const totalNet         = purchases.reduce((s, b) => s + (b.grandTotal           || 0), 0);
   const profileStats     = profileVendor ? getVendorStats(profileVendor._id) : null;
 
   // ── Excel: ALL vendors ───────────────────────────────────
@@ -296,8 +352,15 @@ function VendorPage({ onLogout }) {
     const allWithStats = vendors.map(v => ({ ...v, _stats: getVendorStats(v._id) }));
     const headers = ['Vendor Code', 'Name', 'Phone', 'GST No', 'Address', 'Bills Count', 'Grand Total (Rs.)', 'Paid (Rs.)', 'Outstanding (Rs.)'];
     const rows = allWithStats.map(v => [
-      v.vendorCode, v.name, v.phone || '-', v.gstNo || '-', v.address || '-',
-      v._stats.count, inrExcel(v._stats.totalNet), inrExcel(v._stats.totalPaid), inrExcel(v._stats.outstanding),
+      v.vendorCode,
+      v.name,
+      v.phone || '-',
+      getGst(v) || '-',  // ✅
+      v.address || '-',
+      v._stats.count,
+      inrExcel(v._stats.totalNet),
+      inrExcel(v._stats.totalPaid),
+      inrExcel(v._stats.outstanding),
     ]);
     rows.push([]);
     rows.push([
@@ -317,12 +380,19 @@ function VendorPage({ onLogout }) {
     if (filteredVendors.length === 0) { showToast('No vendors to download after filter', 'error'); return; }
     const headers = ['Vendor Code', 'Name', 'Phone', 'GST No', 'Address', 'Bills Count', 'Grand Total (Rs.)', 'Paid (Rs.)', 'Outstanding (Rs.)'];
     const rows = filteredVendors.map(v => [
-      v.vendorCode, v.name, v.phone || '-', v.gstNo || '-', v.address || '-',
-      v._stats.count, inrExcel(v._stats.totalNet), inrExcel(v._stats.totalPaid), inrExcel(v._stats.outstanding),
+      v.vendorCode,
+      v.name,
+      v.phone || '-',
+      getGst(v) || '-',  // ✅
+      v.address || '-',
+      v._stats.count,
+      inrExcel(v._stats.totalNet),
+      inrExcel(v._stats.totalPaid),
+      inrExcel(v._stats.outstanding),
     ]);
     const filterParts = [
       searchText      ? `Search: "${searchText}"` : '',
-      outstandingOnly ? 'Outstanding only'        : '',
+      outstandingOnly ? 'Outstanding only'         : '',
       `Sort: ${sortBy}`,
     ].filter(Boolean);
     exportToExcel({
@@ -340,12 +410,12 @@ function VendorPage({ onLogout }) {
     const rows = profileStats.bills.map(b => [
       b.sno,
       b.subject || '-',
-      b.date ? new Date(b.date).toLocaleDateString('en-IN') : '-',
+      b.date        ? new Date(b.date).toLocaleDateString('en-IN')        : '-',
       b.invoiceDate ? new Date(b.invoiceDate).toLocaleDateString('en-IN') : '-',
       inrExcel(b.totalAmount),
       inrExcel(b.totalGST || 0),
       inrExcel(b.grandTotal),
-      inrExcel(b.paidAmount),
+      inrExcel(b.cumulativePaidAmount || 0),
       b.paymentStatus,
     ]);
     exportToExcel({
@@ -358,10 +428,9 @@ function VendorPage({ onLogout }) {
 
   const statusBadge = (status) => {
     const map = {
-      'Paid':           'status-paid',
-      'Partial':        'status-partial',
-      'Unpaid':         'status-pending',
-      'AdvancePayment': 'status-advance',
+      'Paid':    'status-paid',
+      'Partial': 'status-partial',
+      'Unpaid':  'status-pending',
     };
     return <span className={`status-badge ${map[status] || 'status-pending'}`}>{status || 'Unpaid'}</span>;
   };
@@ -379,12 +448,43 @@ function VendorPage({ onLogout }) {
           </span>
         </div>
 
-        <div className="actions-row">
-          <button className="action-btn btn-add"    onClick={() => togglePanel(PANELS.ADD)}>Add Vendor</button>
-          <button className="action-btn btn-update" onClick={() => togglePanel(PANELS.UPDATE)}>Update Vendor</button>
-          <button className="action-btn btn-delete" onClick={() => togglePanel(PANELS.DELETE)}>Delete Vendor</button>
-          <button className="action-btn btn-getall" onClick={() => togglePanel(PANELS.GETALL)}>Get All Vendors</button>
-        </div>
+        <div className="action-cards-grid">
+  <div
+    className={`action-card action-card-add ${activePanel === PANELS.ADD ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.ADD)}
+  >
+    <div className="action-card-icon">➕</div>
+    <div className="action-card-title">Add Vendor</div>
+    <div className="action-card-desc">Add a new vendor record</div>
+  </div>
+
+  <div
+    className={`action-card action-card-update ${activePanel === PANELS.UPDATE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.UPDATE)}
+  >
+    <div className="action-card-icon">✏️</div>
+    <div className="action-card-title">Update Vendor</div>
+    <div className="action-card-desc">Edit existing vendor info</div>
+  </div>
+
+  <div
+    className={`action-card action-card-getall ${activePanel === PANELS.GETALL ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.GETALL)}
+  >
+    <div className="action-card-icon">📋</div>
+    <div className="action-card-title">Get All Vendors</div>
+    <div className="action-card-desc">View all vendor records</div>
+  </div>
+
+   <div
+    className={`action-card action-card-delete ${activePanel === PANELS.DELETE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.DELETE)}
+  >
+    <div className="action-card-icon">🗑️</div>
+    <div className="action-card-title">Delete Vendor</div>
+    <div className="action-card-desc">Remove a vendor record</div>
+  </div>
+</div>
 
         {loading && <div className="loading-bar"><div className="loading-inner" /></div>}
 
@@ -486,9 +586,9 @@ function VendorPage({ onLogout }) {
                 {[
                   ['Vendor Code', deleteFound.vendorCode],
                   ['Name',        deleteFound.name],
-                  ['Phone',       deleteFound.phone   || '—'],
-                  ['GST No',      deleteFound.gstNo   || '—'],
-                  ['Address',     deleteFound.address || '—'],
+                  ['Phone',       deleteFound.phone    || '—'],
+                  ['GST No',      getGst(deleteFound)  || '—'],  // ✅
+                  ['Address',     deleteFound.address  || '—'],
                 ].map(([k, v]) => (
                   <div className="detail-row" key={k}>
                     <span className="detail-key">{k}</span>
@@ -551,7 +651,9 @@ function VendorPage({ onLogout }) {
                       <div style={{ flex: 1 }}>
                         <div className="vnd-cp-name">{profileVendor.name}</div>
                         <div className="vnd-cp-meta">{profileVendor.vendorCode} &nbsp;·&nbsp; {profileVendor.phone || '—'}</div>
-                        {profileVendor.gstNo && <div className="vnd-cp-gst">GST: {profileVendor.gstNo}</div>}
+                        {getGst(profileVendor) && (
+                          <div className="vnd-cp-gst">GST: {getGst(profileVendor)}</div>  // ✅
+                        )}
                         <div className="vnd-cp-address">{profileVendor.address || '—'}</div>
                       </div>
                       <ExcelBtn label="Download Bills" onClick={handleDownloadProfileExcel} style={{ alignSelf: 'flex-start' }} />
@@ -586,7 +688,7 @@ function VendorPage({ onLogout }) {
                                   <td className="amt-cell">{inrDisp(b.totalAmount)}</td>
                                   <td>{inrDisp(b.totalGST || 0)}</td>
                                   <td className="amt-cell">{inrDisp(b.grandTotal)}</td>
-                                  <td className="paid-cell">{inrDisp(b.paidAmount)}</td>
+                                  <td className="paid-cell">{inrDisp(b.cumulativePaidAmount || 0)}</td>
                                   <td>{statusBadge(b.paymentStatus)}</td>
                                 </tr>
                               ))}
@@ -691,7 +793,7 @@ function VendorPage({ onLogout }) {
                               <td><span className="vnd-code-tag">{v.vendorCode}</span></td>
                               <td style={{ fontWeight: 600 }}>{v.name}</td>
                               <td>{v.phone || '—'}</td>
-                              <td>{v.gstNo || '—'}</td>
+                              <td>{getGst(v) || '—'}</td>  {/* ✅ */}
                               <td><span className="invoices-count-badge">{stats.count}</span></td>
                               <td className={stats.outstanding > 0 ? 'outstanding-due' : 'outstanding-zero'}>
                                 {inrDisp(stats.outstanding)}

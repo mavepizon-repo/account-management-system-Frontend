@@ -127,11 +127,13 @@ function SubcontractorPage({ onLogout }) {
 
   const showToast = useCallback((msg, type = 'success') => setToast({ message: msg, type }), []);
 
+  // ── FIX: backend GET /api/subcontract/getall returns { count, data: [] }
   const fetchSubs = useCallback(async () => {
     try {
       setLoading(true);
       const res  = await fetch(`${API}/subcontract/getall`);
       const data = await res.json();
+      // Backend returns { count, data: [...] }
       const list = data.data || [];
       setSubs(list);
       return list;
@@ -143,11 +145,14 @@ function SubcontractorPage({ onLogout }) {
     }
   }, [showToast]);
 
+  // ── FIX: backend GET /api/workSubcontract/getall returns { count, data: [] }
+  // NOT { works: [] } — backend getAllWorks returns { count, data: works }
   const fetchWorks = useCallback(async () => {
     try {
       const res  = await fetch(`${API}/workSubcontract/getall`);
       const data = await res.json();
-      setWorks(data.works || []);
+      // Backend getAllWorks: res.status(200).json({ count: works.length, data: works })
+      setWorks(data.data || []);
     } catch {}
   }, []);
 
@@ -168,9 +173,9 @@ function SubcontractorPage({ onLogout }) {
       if (typeof s === 'object') return s._id === subId;
       return s === subId;
     });
-    const totalAmt    = subWorks.reduce((acc, w) => acc + (w.totalAmount  || 0), 0);
-    const totalPaid   = subWorks.reduce((acc, w) => acc + (w.paidAmount   || 0), 0);
-    const outstanding = subWorks.reduce((acc, w) => acc + (w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0))), 0);
+    const totalAmt    = subWorks.reduce((acc, w) => acc + (w.grandTotal  || w.totalAmount || 0), 0);
+    const totalPaid   = subWorks.reduce((acc, w) => acc + (w.cumulativePaidAmount || 0), 0);
+    const outstanding = subWorks.reduce((acc, w) => acc + (w.balanceAmount ?? 0), 0);
     return { count: subWorks.length, totalAmt, totalPaid, outstanding, subWorks };
   }, [works]);
 
@@ -187,7 +192,10 @@ function SubcontractorPage({ onLogout }) {
     const fmt = v => Number(v || 0).toLocaleString('en-IN');
 
     const workRows = stats.subWorks.map((w, i) => {
-      const bal = w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0));
+      // FIX: use cumulativePaidAmount and balanceAmount from backend model
+      const paid = w.cumulativePaidAmount || 0;
+      const bal  = w.balanceAmount ?? ((w.grandTotal || w.totalAmount || 0) - paid);
+      const total = w.grandTotal || w.totalAmount || 0;
       const payStatusColor =
         w.paymentStatus === 'Paid'    ? '#036b4e' :
         w.paymentStatus === 'Partial' ? '#7a5000' : '#c93360';
@@ -203,8 +211,8 @@ function SubcontractorPage({ onLogout }) {
           <td class="tc">${w.startDate ? w.startDate.split('T')[0] : '—'}</td>
           <td class="tc">${w.endDate   ? w.endDate.split('T')[0]   : '—'}</td>
           <td class="tc"><span style="color:${workStatusColor};font-weight:700;">${w.status || 'Pending'}</span></td>
-          <td class="tr">₹${fmt(w.totalAmount)}</td>
-          <td class="tr" style="color:#036b4e;font-weight:700;">₹${fmt(w.paidAmount)}</td>
+          <td class="tr">₹${fmt(total)}</td>
+          <td class="tr" style="color:#036b4e;font-weight:700;">₹${fmt(paid)}</td>
           <td class="tr" style="color:${bal > 0 ? '#c93360' : '#036b4e'};font-weight:700;">₹${fmt(bal)}</td>
           <td class="tc"><span style="color:${payStatusColor};font-weight:700;">${w.paymentStatus || 'Unpaid'}</span></td>
         </tr>`;
@@ -221,19 +229,13 @@ function SubcontractorPage({ onLogout }) {
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Open Sans',sans-serif;font-size:13px;color:#1a1a1a;background:#fff;}
   .page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;}
-
-  /* ── Header ── */
   .hdr{background:#1c1c1c;display:flex;justify-content:space-between;align-items:center;padding:18px 32px;gap:24px;}
   .hdr-brand{display:flex;align-items:center;gap:0;flex-shrink:0;}
   .logo-icon{width:80px;height:50px;margin-right:10px;flex-shrink:0;object-fit:contain;}
   .hdr-div{width:1px;height:50px;background:rgba(255,255,255,0.22);margin:0 24px;flex-shrink:0;}
   .hdr-addr{font-size:10.5px;line-height:1.85;color:#ffffff;}
   .hdr-doc-title{font-family:'Montserrat',sans-serif;font-size:22px;font-weight:900;letter-spacing:4px;color:#ffffff;text-align:right;white-space:nowrap;flex-shrink:0;}
-
-  /* ── Body ── */
   .body{padding:26px 32px 0;}
-
-  /* ── Profile meta ── */
   .profile-meta{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;gap:24px;}
   .profile-left{}
   .sc-code-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
@@ -243,8 +245,6 @@ function SubcontractorPage({ onLogout }) {
   .sc-detail{font-size:12px;color:#444;line-height:1.8;margin-bottom:2px;}
   .sc-gst{font-size:12px;color:#222;font-weight:700;margin-top:4px;}
   .sc-skill{display:inline-block;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-top:6px;}
-
-  /* ── Stats grid ── */
   .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
   .stat-card{border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:5px;border:1.5px solid transparent;}
   .stat-card span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;opacity:0.75;}
@@ -253,21 +253,14 @@ function SubcontractorPage({ onLogout }) {
   .sc-billed   {background:#fffbe8;color:#7a5000;border-color:#ffe08a;}
   .sc-paid     {background:#e6fdf6;color:#036b4e;border-color:#a0f0d8;}
   .sc-due      {background:#fff4f7;color:#c93360;border-color:#ffc8d4;}
-
-  /* ── Section title ── */
   .section-title{font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid #f0f0f0;}
-
-  /* ── Table ── */
   table{width:100%;border-collapse:collapse;}
   thead tr{background:#1c1c1c;color:#fff;}
   thead th{padding:9px 10px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:0.3px;text-align:left;}
   tbody tr{border-bottom:1px solid #e8e8e8;}
   tbody tr:nth-child(even){background:#fafafa;}
   tbody td{padding:9px 10px;font-size:12px;}
-
   .no-projects{text-align:center;padding:28px;color:#aaa;font-size:13px;background:#fafafa;border-radius:8px;border:1.5px dashed #e0e0e0;}
-
-  /* ── Footer ── */
   .footer{margin-top:40px;padding:14px 32px;border-top:1px solid #ddd;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#999;}
   .tc{text-align:center;} .tr{text-align:right;}
   @media print{body{padding:0;}.page{width:100%;margin:0;}@page{margin:8mm;}}
@@ -275,7 +268,6 @@ function SubcontractorPage({ onLogout }) {
 </head>
 <body>
 <div class="page">
-  <!-- Header -->
   <div class="hdr">
     <div style="display:flex;align-items:center;flex:1;min-width:0;">
       <img src="${window.location.origin}${logo}" alt="logo" class="logo-icon"/>
@@ -288,9 +280,7 @@ function SubcontractorPage({ onLogout }) {
     </div>
     <div class="hdr-doc-title">SUBCONTRACTOR<br/>PROFILE</div>
   </div>
-
   <div class="body">
-    <!-- Profile Meta -->
     <div class="profile-meta">
       <div class="profile-left">
         <div class="sc-code-row">
@@ -312,8 +302,6 @@ function SubcontractorPage({ onLogout }) {
         </div>
       </div>
     </div>
-
-    <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card sc-total">
         <span>Total Projects</span>
@@ -332,8 +320,6 @@ function SubcontractorPage({ onLogout }) {
         <strong>₹${fmt(stats.outstanding)}</strong>
       </div>
     </div>
-
-    <!-- Project History -->
     <div class="section-title">Project History</div>
     ${stats.subWorks.length === 0
       ? `<div class="no-projects">No projects found for this subcontractor.</div>`
@@ -358,7 +344,6 @@ function SubcontractorPage({ onLogout }) {
         </table>`
     }
   </div>
-
   <div class="footer">
     <span>designart &nbsp;|&nbsp; 5-6, Indira Nagar, Coimbatore 641012</span>
     <span>Subcontractor Report — Confidential</span>
@@ -427,6 +412,7 @@ function SubcontractorPage({ onLogout }) {
     if (!updateForm.phone.trim())  { showToast('Phone is required', 'error');             return; }
     try {
       setLoading(true);
+      // FIX: backend route is PUT /api/subcontract/update/:id
       const res = await fetch(`${API}/subcontract/update/${updateFound._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -463,6 +449,7 @@ function SubcontractorPage({ onLogout }) {
     if (!deleteFound) { showToast('Please select a subcontractor', 'error'); return; }
     try {
       setLoading(true);
+      // FIX: backend route is DELETE /api/subcontract/delete/:id
       const res  = await fetch(`${API}/subcontract/delete/${deleteFound._id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
@@ -548,14 +535,52 @@ function SubcontractorPage({ onLogout }) {
           </span>
         </div>
 
-        <div className="actions-row">
-          <button className="action-btn btn-add"         onClick={() => togglePanel(PANELS.ADD)}>Add Subcontractor</button>
-          <button className="action-btn btn-update"      onClick={() => togglePanel(PANELS.UPDATE)}>Update Subcontractor</button>
-          <button className="action-btn btn-delete"      onClick={() => togglePanel(PANELS.DELETE)}>Delete Subcontractor</button>
-          <button className="action-btn btn-getall"      onClick={() => togglePanel(PANELS.GETALL)}>Get All Subcontractors</button>
-          <button className="action-btn sub-btn-project" onClick={() => navigate('/work-subcontract')}>Project Details</button>
-        </div>
+       <div className="action-cards-grid">
+  <div
+    className={`action-card action-card-add ${activePanel === PANELS.ADD ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.ADD)}
+  >
+    <div className="action-card-icon">➕</div>
+    <div className="action-card-title">Add Subcontractor</div>
+    <div className="action-card-desc">Add a new subcontractor record</div>
+  </div>
 
+  <div
+    className={`action-card action-card-update ${activePanel === PANELS.UPDATE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.UPDATE)}
+  >
+    <div className="action-card-icon">✏️</div>
+    <div className="action-card-title">Update Subcontractor</div>
+    <div className="action-card-desc">Edit existing subcontractor info</div>
+  </div>
+
+  <div
+    className={`action-card action-card-getall ${activePanel === PANELS.GETALL ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.GETALL)}
+  >
+    <div className="action-card-icon">📋</div>
+    <div className="action-card-title">Get All Subcontractors</div>
+    <div className="action-card-desc">View all subcontractor records</div>
+  </div>
+
+   <div
+    className={`action-card action-card-delete ${activePanel === PANELS.DELETE ? 'action-card-active' : ''}`}
+    onClick={() => togglePanel(PANELS.DELETE)}
+  >
+    <div className="action-card-icon">🗑️</div>
+    <div className="action-card-title">Delete Subcontractor</div>
+    <div className="action-card-desc">Remove a subcontractor record</div>
+  </div>
+
+  <div
+    className="action-card action-card-project"
+    onClick={() => navigate('/work-subcontract')}
+  >
+    <div className="action-card-icon">🏗️</div>
+    <div className="action-card-title">Project Details</div>
+    <div className="action-card-desc">View all project works</div>
+  </div>
+</div>
         {loading && <div className="loading-bar"><div className="loading-inner sub-loading" /></div>}
 
         {/* ══ ADD ══ */}
@@ -674,7 +699,6 @@ function SubcontractorPage({ onLogout }) {
                         <div className="sub-cp-address">{profileSub.address || '—'}</div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}>
-                        {/* ── PRINT BUTTON ── */}
                         <button
                           className="submit-btn invoice-print-btn"
                           style={{ whiteSpace: 'nowrap' }}
@@ -689,6 +713,7 @@ function SubcontractorPage({ onLogout }) {
                     </div>
 
                     <div className="sub-stats-row">
+                      {/* FIX: use correct field names from backend model */}
                       <div className="sub-stat sub-stat-total"><span>Total Projects</span><strong>{profileStats.count}</strong></div>
                       <div className="sub-stat sub-stat-billed"><span>Total Contract</span><strong>₹{profileStats.totalAmt.toLocaleString('en-IN')}</strong></div>
                       <div className="sub-stat sub-stat-paid"><span>Total Paid</span><strong>₹{profileStats.totalPaid.toLocaleString('en-IN')}</strong></div>
@@ -708,7 +733,10 @@ function SubcontractorPage({ onLogout }) {
                             </thead>
                             <tbody>
                               {profileStats.subWorks.map(w => {
-                                const bal = w.balanceAmount ?? ((w.totalAmount || 0) - (w.paidAmount || 0));
+                                // FIX: use correct backend field names
+                                const paid  = w.cumulativePaidAmount || 0;
+                                const bal   = w.balanceAmount ?? 0;
+                                const total = w.grandTotal || w.totalAmount || 0;
                                 return (
                                   <tr key={w._id}>
                                     <td style={{ fontWeight: 700 }}>{w.projectName}</td>
@@ -716,8 +744,8 @@ function SubcontractorPage({ onLogout }) {
                                     <td>{w.startDate ? w.startDate.split('T')[0] : '—'}</td>
                                     <td>{w.endDate   ? w.endDate.split('T')[0]   : '—'}</td>
                                     <td>{workStatusBadge(w.status)}</td>
-                                    <td className="amt-cell">₹{Number(w.totalAmount).toLocaleString('en-IN')}</td>
-                                    <td className="paid-cell">₹{Number(w.paidAmount).toLocaleString('en-IN')}</td>
+                                    <td className="amt-cell">₹{Number(total).toLocaleString('en-IN')}</td>
+                                    <td className="paid-cell">₹{Number(paid).toLocaleString('en-IN')}</td>
                                     <td className={bal > 0 ? 'due-cell' : 'zero-cell'}>₹{Number(bal).toLocaleString('en-IN')}</td>
                                     <td>{statusBadge(w.paymentStatus)}</td>
                                   </tr>
@@ -777,7 +805,6 @@ function SubcontractorPage({ onLogout }) {
                             <td>
                               <div style={{ display: 'flex', gap: 6 }}>
                                 <button className="table-edit-btn" onClick={e => { e.stopPropagation(); startInlineEdit(s); }}>Edit</button>
-                                {/* ── Print button in table row ── */}
                                 <button
                                   className="inv-print-btn"
                                   title="Print Profile"

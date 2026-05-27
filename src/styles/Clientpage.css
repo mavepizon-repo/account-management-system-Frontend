@@ -565,4 +565,81 @@
   transition: var(--transition);
 }
 .modal-cancel-btn:hover { background: #e4e8f4; color: var(--text-primary); }
+
+/* ── Action Cards Grid (Dashboard style) ─────────────────── */
+.action-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 900px) {
+  .action-cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .action-cards-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.action-card {
+  background: white;
+  border: 1.5px solid var(--border, #e4e8f4);
+  border-radius: 16px;
+  padding: 24px 20px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top color bar — dashboard card style */
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 16px 16px 0 0;
+}
+
+.action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+}
+
+.action-card-active {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.action-card-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.action-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #1e2a4a);
+}
+
+.action-card-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #6b7699);
+  line-height: 1.4;
+}
+
+/* ── Individual card colors ──────────────────────────────── */
+.action-card-add::before    { background: #5b7fff; }
+.action-card-update::before { background: #f59e0b; }
+.action-card-delete::before { background: #ef4444; }
+.action-card-getall::before { background: #10b981; }
+
+.action-card-add.action-card-active    { border-color: #c8d4ff; background: #f5f7ff; }
+.action-card-update.action-card-active { border-color: #fde68a; background: #fffdf0; }
+.action-card-delete.action-card-active { border-color: #fecaca; background: #fff8f8; }
+.action-card-getall.action-card-active { border-color: #a7f3d0; background: #f0fdf9; }
  
